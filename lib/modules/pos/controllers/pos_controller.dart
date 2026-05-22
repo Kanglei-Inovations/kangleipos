@@ -23,6 +23,13 @@ class PosController extends GetxController {
   final RxString searchQuery = ''.obs;
   final RxBool isLoading = false.obs;
 
+  // UI State for Redesign
+  final RxInt currentInvoiceTab = 0.obs;
+  final RxString selectedPaymentMethod = 'Cash'.obs;
+  final RxDouble receivedAmount = 0.0.obs;
+  final RxInt holdCount = 3.obs; // Placeholder for UI badge
+  final RxInt draftCount = 5.obs; // Placeholder for UI badge
+
   @override
   void onInit() {
     super.onInit();

@@ -53,6 +53,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           Expanded(
             child: Container(
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF0F172A) : Colors.white,
                 borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
@@ -128,6 +129,7 @@ class _PremiumHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
+      clipBehavior: Clip.antiAlias,
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
