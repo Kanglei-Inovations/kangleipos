@@ -15,22 +15,27 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF64748B).withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+              letterSpacing: -0.5,
+            ),
           ),
           const SizedBox(height: 24),
           child,
@@ -92,17 +97,63 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _buildDropdown('Category', controller.categories.map((c) => c.name).toList(), (v) => controller.selectedCategoryId.value = controller.categories.firstWhere((c) => c.name == v).id)),
+                Expanded(
+                  child: Obx(() {
+                    final items = controller.categories.map((c) => c.name).toList();
+                    final selected = controller.categories
+                        .firstWhereOrNull((c) => c.id == controller.selectedCategoryId.value)
+                        ?.name;
+                    return _buildDropdown(
+                      'Category',
+                      items,
+                      (v) {
+                        final cat = controller.categories.firstWhereOrNull((c) => c.name == v);
+                        if (cat != null) controller.selectedCategoryId.value = cat.id;
+                      },
+                      value: selected,
+                    );
+                  }),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildDropdown('Brand', controller.brands.map((b) => b.name).toList(), (v) => controller.selectedBrandId.value = controller.brands.firstWhere((b) => b.name == v).id)),
+                Expanded(
+                  child: Obx(() {
+                    final items = controller.brands.map((b) => b.name).toList();
+                    final selected = controller.brands
+                        .firstWhereOrNull((b) => b.id == controller.selectedBrandId.value)
+                        ?.name;
+                    return _buildDropdown(
+                      'Brand',
+                      items,
+                      (v) {
+                        final brand = controller.brands.firstWhereOrNull((b) => b.name == v);
+                        if (brand != null) controller.selectedBrandId.value = brand.id;
+                      },
+                      value: selected,
+                    );
+                  }),
+                ),
               ],
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: _buildDropdown('Unit', ['pcs', 'kg', 'box', 'ltr', 'm'], (v) => controller.selectedUnit.value = v!)),
+                Expanded(
+                  child: Obx(() => _buildDropdown(
+                        'Unit',
+                        ['pcs', 'kg', 'box', 'ltr', 'm'],
+                        (v) => controller.selectedUnit.value = v!,
+                        value: controller.selectedUnit.value,
+                      )),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildDropdown('Tax Class', ['GST 0%', 'GST 5%', 'GST 12%', 'GST 18%', 'GST 28%'], (v) => controller.selectedTaxClass.value = v!)),
+                Expanded(
+                  child: Obx(() => _buildDropdown(
+                        'Tax Class',
+                        ['GST 0%', 'GST 5%', 'GST 12%', 'GST 18%', 'GST 28%'],
+                        (v) => controller.selectedTaxClass.value = v!,
+                        value: controller.selectedTaxClass.value,
+                      )),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -192,21 +243,28 @@ class ProductPricingCard extends GetView<AddProductController> {
       title: 'Pricing Information',
       child: Column(
         children: [
-          _buildTextField(controller.costPriceController, 'Cost Price', '0.00', prefixText: '₹', isNumber: true),
-          const SizedBox(height: 20),
-          _buildTextField(controller.sellingPriceController, 'Selling Price', '0.00', prefixText: '₹', isNumber: true),
-          const SizedBox(height: 20),
           _buildTextField(controller.mrpController, 'MRP', '0.00', prefixText: '₹', isNumber: true),
-          const SizedBox(height: 24),
-          _buildMarginIndicator(),
+          const SizedBox(height: 20),
+          _buildTextField(controller.costPriceController, 'Cost Price', '0.00', prefixText: '₹', isNumber: true),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _buildDropdown('Discount Type', ['Percentage', 'Flat'], (v) => controller.selectedDiscountType.value = v!)),
+              Expanded(
+                child: Obx(() => _buildDropdown(
+                      'Discount Type',
+                      ['Percentage', 'Flat'],
+                      (v) => controller.selectedDiscountType.value = v!,
+                      value: controller.selectedDiscountType.value,
+                    )),
+              ),
               const SizedBox(width: 16),
               Expanded(child: _buildTextField(controller.discountValueController, 'Value', '0.00', isNumber: true)),
             ],
           ),
+          const SizedBox(height: 20),
+          _buildTextField(controller.sellingPriceController, 'Selling Price', '0.00', prefixText: '₹', isNumber: true),
+          const SizedBox(height: 24),
+          _buildMarginIndicator(),
         ],
       ),
     );
@@ -355,22 +413,64 @@ Widget _buildTextField(TextEditingController ctrl, String label, String hint, {b
   );
 }
 
-Widget _buildDropdown(String label, List<String> items, Function(String?) onChanged) {
+Widget _buildDropdown(String label, List<String> items, Function(String?) onChanged, {String? value}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
+      Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          color: Color(0xFF475569),
+        ),
+      ),
       const SizedBox(height: 8),
       DropdownButtonFormField<String>(
-        items: items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
+        value: value,
+        items: items
+            .map((i) => DropdownMenuItem(
+                  value: i,
+                  child: Text(
+                    i,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ))
+            .toList(),
         onChanged: onChanged,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
+        dropdownColor: Colors.white,
+        elevation: 8,
+        borderRadius: BorderRadius.circular(16),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Color(0xFF64748B),
+          size: 20,
+        ),
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF1E293B),
+        ),
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.blue, width: 2),
+          ),
         ),
       ),
     ],

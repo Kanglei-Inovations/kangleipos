@@ -70,9 +70,43 @@ class AddProductController extends GetxController {
       _loadEditingData();
     }
     
-    // Setup listeners for margin calculation
+    // Setup listeners for pricing calculations
+    mrpController.addListener(_updateSellingPrice);
+    discountValueController.addListener(_updateSellingPrice);
     costPriceController.addListener(_calculateMargin);
     sellingPriceController.addListener(_calculateMargin);
+
+    // Also listen to discount type changes
+    ever(selectedDiscountType, (_) => _updateSellingPrice());
+  }
+
+  void _updateSellingPrice() {
+    final mrp = double.tryParse(mrpController.text) ?? 0.0;
+    final discount = double.tryParse(discountValueController.text) ?? 0.0;
+
+    double sellingPrice = mrp;
+    if (selectedDiscountType.value == 'Percentage') {
+      sellingPrice = mrp - (mrp * (discount / 100));
+    } else {
+      sellingPrice = mrp - discount;
+    }
+
+    final currentSellingStr = sellingPrice.toStringAsFixed(2);
+    if (sellingPriceController.text != currentSellingStr) {
+      sellingPriceController.text = currentSellingStr;
+    }
+  }
+
+  void _calculateMargin() {
+    final cost = double.tryParse(costPriceController.text) ?? 0.0;
+    final selling = double.tryParse(sellingPriceController.text) ?? 0.0;
+
+    profitMargin.value = selling - cost;
+    if (selling > 0) {
+      marginPercentage.value = (profitMargin.value / selling) * 100;
+    } else {
+      marginPercentage.value = 0.0;
+    }
   }
 
   void _loadEditingData() {
@@ -105,21 +139,20 @@ class AddProductController extends GetxController {
   }
 
   Future<void> loadMasterData() async {
-    categories.assignAll(await db.select(db.categories).get());
-    brands.assignAll(await db.select(db.brands).get());
-    if (categories.isNotEmpty) selectedCategoryId.value = categories.first.id;
-    if (brands.isNotEmpty) selectedBrandId.value = brands.first.id;
-  }
-
-  void _calculateMargin() {
-    final cost = double.tryParse(costPriceController.text) ?? 0.0;
-    final selling = double.tryParse(sellingPriceController.text) ?? 0.0;
+    final cats = await db.select(db.categories).get();
+    final brnds = await db.select(db.brands).get();
     
-    profitMargin.value = selling - cost;
-    if (selling > 0) {
-      marginPercentage.value = (profitMargin.value / selling) * 100;
-    } else {
-      marginPercentage.value = 0.0;
+    categories.assignAll(cats);
+    brands.assignAll(brnds);
+    
+    // Only auto-select first item if we are creating a new product
+    if (editingProduct == null) {
+      if (categories.isNotEmpty && selectedCategoryId.value.isEmpty) {
+        selectedCategoryId.value = categories.first.id;
+      }
+      if (brands.isNotEmpty && selectedBrandId.value.isEmpty) {
+        selectedBrandId.value = brands.first.id;
+      }
     }
   }
 
@@ -208,15 +241,24 @@ class AddProductController extends GetxController {
         await db.update(db.products).replace(companion);
       }
 
-      Get.snackbar('Success', editingProduct == null ? 'Product saved successfully' : 'Product updated successfully', backgroundColor: Colors.green, colorText: Colors.white);
-      
       // Refresh the master list if it exists in memory
       if (Get.isRegistered<ProductsMasterController>()) {
-        Get.find<ProductsMasterController>().refreshAll();
+        await Get.find<ProductsMasterController>().refreshAll();
       }
+
+      Get.back();
       
-      Get.back(); // Return to previous page
+      Get.snackbar(
+        'Success',
+        editingProduct == null ? 'Product saved successfully' : 'Product updated successfully',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
     } catch (e) {
+      print('$e');
       Get.snackbar('Error', 'Failed to save product: $e', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;

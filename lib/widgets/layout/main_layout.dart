@@ -29,10 +29,12 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
     final isDesktop = size.width >= 1180;
     final isTablet = size.width >= 768 && size.width < 1180;
     final isMobile = size.width < 768;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -50,41 +52,55 @@ class _MainLayoutState extends State<MainLayout> {
               },
             ),
           Expanded(
-            child: Column(
-              children: [
-                _PremiumHeader(
-                  title: widget.title,
-                  isMobile: isMobile,
-                  isTablet: isTablet,
-                  onMenuPressed: isTablet
-                      ? () => Scaffold.of(context).openDrawer()
-                      : null,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
                 ),
-                Expanded(
-                  child: PageTransitionSwitcher(
-                    duration: const Duration(milliseconds: 420),
-                    transitionBuilder:
-                        (child, animation, secondaryAnimation) {
-                      return FadeThroughTransition(
-                        animation: animation,
-                        secondaryAnimation: secondaryAnimation,
-                        fillColor: Colors.transparent,
-                        child: child,
-                      );
-                    },
-                    child: KeyedSubtree(
-                      key: ValueKey(widget.title),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
+              ),
+              child: Column(
+                children: [
+                  _PremiumHeader(
+                    title: widget.title,
+                    isMobile: isMobile,
+                    isTablet: isTablet,
+                    onMenuPressed: isTablet
+                        ? () => Scaffold.of(context).openDrawer()
+                        : null,
+                  ),
+                  Expanded(
+                    child: PageTransitionSwitcher(
+                      duration: const Duration(milliseconds: 420),
+                      transitionBuilder:
+                          (child, animation, secondaryAnimation) {
+                        return FadeThroughTransition(
+                          animation: animation,
+                          secondaryAnimation: secondaryAnimation,
+                          fillColor: Colors.transparent,
+                          child: child,
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: ValueKey(widget.title),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          child: widget.child,
                         ),
-                        child: widget.child,
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -112,10 +128,11 @@ class _PremiumHeader extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      height: 82,
+      height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
         border: Border(
           bottom: BorderSide(
             color: isDark

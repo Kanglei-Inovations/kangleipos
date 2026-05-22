@@ -576,7 +576,7 @@ class _TinyIconButton extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.1),
           ),
         ),
-        child: const Icon(icon, color: Colors.white70, size: 17),
+        child: Icon(icon, color: Colors.white70, size: 17),
       ),
     );
   }
