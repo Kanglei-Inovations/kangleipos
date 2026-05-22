@@ -1,0 +1,65 @@
+name: kangleipos
+description: "KANGLEI POS - Modern POS & Business Management Software"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Core UI & Design
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  responsive_builder: ^0.7.1
+  fluent_ui: ^4.11.1
+  
+  # State Management & Routing
+  get: ^4.6.6
+  
+  # Database & Offline Sync
+  drift: ^2.16.0
+  sqlite3_flutter_libs: ^0.5.20
+  drift_flutter: ^0.2.8
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0+2
+  path_provider: ^2.1.2
+  path: ^1.8.3
+  shared_preferences: ^2.2.2
+  uuid: ^4.3.3
+  
+  # Desktop specifics
+  window_manager: ^0.3.8
+  
+  # Charts & Data Visualization
+  fl_chart: ^0.66.0
+  
+  # Invoicing & Printing
+  pdf: ^3.10.8
+  printing: ^5.11.1
+  lottie: ^3.3.3
+  animations: ^2.2.0
+  
+  # Utilities
+  intl: ^0.20.2
+  logger: ^2.0.2
+  crypto: ^3.0.3
+  archive: ^4.0.9
+  responsive_framework: ^1.5.1
+  provider: ^6.1.5+1
+  flutter_animate: ^4.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  drift_dev: ^2.16.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lottie/
