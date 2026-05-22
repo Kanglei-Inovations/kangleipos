@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import '../../../database/database.dart';
 
 class ProductsMasterController extends GetxController with GetSingleTickerProviderStateMixin {
   final AppDatabase db = Get.find<AppDatabase>();
+  final _uuid = const Uuid();
   
   final RxInt selectedTabIndex = 0.obs;
   final RxString searchQuery = ''.obs;
@@ -17,7 +19,15 @@ class ProductsMasterController extends GetxController with GetSingleTickerProvid
   final RxInt totalProductsCount = 0.obs;
   final RxInt categoriesCount = 0.obs;
   final RxInt brandsCount = 0.obs;
-  final RxInt unitsCount = 18.obs; // Dummy as units table not in DB yet
+  final RxInt unitsCount = 18.obs; 
+
+  // Dummy data for demo if DB is empty
+  final List<Map<String, String>> dummyUnits = [
+    {'name': 'Pieces', 'abbr': 'pcs', 'type': 'Base Unit', 'status': 'Active'},
+    {'name': 'Kilograms', 'abbr': 'kg', 'type': 'Weight Unit', 'status': 'Active'},
+    {'name': 'Box (12)', 'abbr': 'box', 'type': 'Large Packing', 'status': 'Active'},
+    {'name': 'Grams', 'abbr': 'g', 'type': 'Small Packing', 'status': 'Active'},
+  ];
 
   @override
   void onInit() {
@@ -50,16 +60,21 @@ class ProductsMasterController extends GetxController with GetSingleTickerProvid
 
   List<Product> get filteredProducts {
     if (searchQuery.isEmpty) return products;
-    return products.where((p) => p.name.toLowerCase().contains(searchQuery.value.toLowerCase()) || (p.barcode?.contains(searchQuery.value) ?? false)).toList();
+    final q = searchQuery.value.toLowerCase();
+    return products.where((p) => p.name.toLowerCase().contains(q) || (p.barcode?.contains(q) ?? false)).toList();
   }
   
   List<Category> get filteredCategories {
     if (searchQuery.isEmpty) return categories;
-    return categories.where((c) => c.name.toLowerCase().contains(searchQuery.value.toLowerCase())).toList();
+    final q = searchQuery.value.toLowerCase();
+    return categories.where((c) => c.name.toLowerCase().contains(q)).toList();
   }
 
   List<Brand> get filteredBrands {
     if (searchQuery.isEmpty) return brands;
-    return brands.where((b) => b.name.toLowerCase().contains(searchQuery.value.toLowerCase())).toList();
+    final q = searchQuery.value.toLowerCase();
+    return brands.where((b) => b.name.toLowerCase().contains(q)).toList();
   }
+
+  String generateId() => _uuid.v4();
 }

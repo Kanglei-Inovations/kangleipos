@@ -35,69 +35,56 @@ class _MainLayoutState extends State<MainLayout> {
     final isMobile = size.width < 768;
 
     return Scaffold(
-      extendBody: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       drawer: isTablet ? const Sidebar(isMobile: true) : null,
       bottomNavigationBar: isMobile ? const _MobileNavigation() : null,
-      floatingActionButton: const _PremiumFloatingButton(),
-      body: Stack(
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _DashboardBackground(),
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isDesktop ? 18 : 14,
-                14,
-                isDesktop ? 18 : 14,
-                isMobile ? 90 : 18,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (isDesktop)
-                    Sidebar(
-                      isMobile: false,
-                      isCollapsed: _sidebarCollapsed,
-                      onToggle: () {
-                        setState(() => _sidebarCollapsed = !_sidebarCollapsed);
-                      },
-                    ),
-                  if (isDesktop) const SizedBox(width: 18),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _PremiumHeader(
-                          title: widget.title,
-                          isMobile: isMobile,
-                          isTablet: isTablet,
-                          onMenuPressed: isTablet
-                              ? () => Scaffold.of(context).openDrawer()
-                              : null,
+          if (isDesktop)
+            Sidebar(
+              isMobile: false,
+              isCollapsed: _sidebarCollapsed,
+              onToggle: () {
+                setState(() => _sidebarCollapsed = !_sidebarCollapsed);
+              },
+            ),
+          Expanded(
+            child: Column(
+              children: [
+                _PremiumHeader(
+                  title: widget.title,
+                  isMobile: isMobile,
+                  isTablet: isTablet,
+                  onMenuPressed: isTablet
+                      ? () => Scaffold.of(context).openDrawer()
+                      : null,
+                ),
+                Expanded(
+                  child: PageTransitionSwitcher(
+                    duration: const Duration(milliseconds: 420),
+                    transitionBuilder:
+                        (child, animation, secondaryAnimation) {
+                      return FadeThroughTransition(
+                        animation: animation,
+                        secondaryAnimation: secondaryAnimation,
+                        fillColor: Colors.transparent,
+                        child: child,
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey(widget.title),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
                         ),
-                        SizedBox(height: isMobile ? 14 : 18),
-                        Expanded(
-                          child: PageTransitionSwitcher(
-                            duration: const Duration(milliseconds: 420),
-                            transitionBuilder:
-                                (child, animation, secondaryAnimation) {
-                              return FadeThroughTransition(
-                                animation: animation,
-                                secondaryAnimation: secondaryAnimation,
-                                fillColor: Colors.transparent,
-                                child: child,
-                              );
-                            },
-                            child: KeyedSubtree(
-                              key: ValueKey(widget.title),
-                              child: widget.child,
-                            ),
-                          ),
-                        ),
-                      ],
+                        child: widget.child,
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -124,12 +111,20 @@ class _PremiumHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return GlassPanel(
-      borderRadius: BorderRadius.circular(28),
-      padding: EdgeInsets.all(isMobile ? 12 : 14),
-      color: isDark
-          ? const Color(0xFF111827).withOpacity(0.58)
-          : Colors.white.withOpacity(0.66),
+    return Container(
+      height: 82,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
+        ),
+      ),
       child: isMobile ? _buildMobileHeader(context) : _buildWideHeader(context),
     );
   }
@@ -138,7 +133,8 @@ class _PremiumHeader extends StatelessWidget {
     return Row(
       children: [
         _HeaderIconButton(
-          icon: isTablet ? Icons.menu_rounded : Icons.dashboard_customize_rounded,
+          icon:
+              isTablet ? Icons.menu_rounded : Icons.dashboard_customize_rounded,
           onTap: onMenuPressed,
         ),
         const SizedBox(width: 16),
@@ -233,25 +229,26 @@ class _GlobalSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final muted = isDark ? AppTheme.darkMutedTextColor : AppTheme.lightMutedTextColor;
+    final muted =
+        isDark ? AppTheme.darkMutedTextColor : AppTheme.lightMutedTextColor;
 
     return Container(
-      height: 52,
+      height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0F172A).withOpacity(0.58)
-            : Colors.white.withOpacity(0.74),
-        borderRadius: BorderRadius.circular(22),
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.10)
-              : const Color(0xFFCBD5E1).withOpacity(0.92),
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.search_rounded, color: muted, size: 22),
+          Icon(Icons.search_rounded, color: muted, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -259,22 +256,29 @@ class _GlobalSearchBar extends StatelessWidget {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: muted,
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.07)
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : const Color(0xFFE2E8F0),
+              ),
             ),
             child: Text(
               'Ctrl + K',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: muted,
                 fontWeight: FontWeight.w800,
+                fontSize: 10,
               ),
             ),
           ),
@@ -318,9 +322,9 @@ class _HeaderActions extends StatelessWidget {
               : Icons.dark_mode_outlined,
           onTap: themeController.toggleTheme,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         const _HeaderIconButton(icon: Icons.fullscreen_rounded),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         _NotificationButton(),
         const SizedBox(width: 12),
         const _StoreSelector(),
@@ -357,33 +361,34 @@ class _HeaderIconButtonState extends State<_HeaderIconButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: AnimatedScale(
-        scale: _hovering ? 1.04 : 1,
-        duration: const Duration(milliseconds: 170),
-        curve: Curves.easeOutCubic,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: _hovering
+                ? (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFF1F5F9))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
               color: _hovering
-                  ? AppTheme.primaryColor.withOpacity(0.12)
-                  : isDark
-                  ? const Color(0xFF1E293B).withOpacity(0.58)
-                  : Colors.white.withOpacity(0.78),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _hovering
-                    ? AppTheme.primaryColor.withOpacity(0.24)
-                    : isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : const Color(0xFFCBD5E1).withOpacity(0.82),
-              ),
+                  ? (isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : const Color(0xFFE2E8F0))
+                  : Colors.transparent,
             ),
-            child: Icon(widget.icon, size: 21),
+          ),
+          child: Icon(
+            widget.icon,
+            size: 20,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.7)
+                : const Color(0xFF64748B),
           ),
         ),
       ),
@@ -399,20 +404,19 @@ class _NotificationButton extends StatelessWidget {
       children: [
         const _HeaderIconButton(icon: Icons.notifications_none_rounded),
         Positioned(
-          top: -2,
-          right: -2,
+          top: 6,
+          right: 6,
           child: Container(
-            padding: const EdgeInsets.all(5),
-            decoration: const BoxDecoration(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
               color: AppTheme.dangerColor,
               shape: BoxShape.circle,
-            ),
-            child: Text(
-              '5',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
+              border: Border.all(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF0F172A)
+                    : Colors.white,
+                width: 1.5,
               ),
             ),
           ),
@@ -466,36 +470,27 @@ class _HeaderPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final muted = isDark ? AppTheme.darkMutedTextColor : AppTheme.lightMutedTextColor;
+    final muted =
+        isDark ? AppTheme.darkMutedTextColor : AppTheme.lightMutedTextColor;
 
     return Container(
-      height: 52,
-      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14),
+      height: 44,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 12),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF0F172A).withOpacity(0.58)
-            : Colors.white.withOpacity(0.74),
-        borderRadius: BorderRadius.circular(22),
+            ? Colors.white.withValues(alpha: 0.04)
+            : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : const Color(0xFFCBD5E1).withOpacity(0.82),
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFD29D), Color(0xFFFF8A80)],
-              ),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, size: 17, color: Colors.white),
-          ),
+          Icon(icon, size: 16, color: AppTheme.primaryColor),
           if (!compact) const SizedBox(width: 10),
           if (!compact)
             Column(
@@ -506,6 +501,7 @@ class _HeaderPill extends StatelessWidget {
                   title,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w900,
+                    fontSize: 12,
                   ),
                 ),
                 Text(
@@ -513,12 +509,13 @@ class _HeaderPill extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: muted,
                     fontWeight: FontWeight.w700,
+                    fontSize: 9,
                   ),
                 ),
               ],
             ),
           const SizedBox(width: 8),
-          Icon(Icons.keyboard_arrow_down_rounded, color: muted, size: 20),
+          Icon(Icons.keyboard_arrow_down_rounded, color: muted, size: 16),
         ],
       ),
     );
@@ -532,7 +529,7 @@ class _ProfileMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       tooltip: 'Profile',
-      offset: const Offset(0, 12),
+      offset: const Offset(0, 8),
       onSelected: (value) {
         if (value == 'logout') {
           if (Get.isRegistered<AuthController>()) {
@@ -547,20 +544,11 @@ class _ProfileMenu extends StatelessWidget {
         PopupMenuItem(value: 'logout', child: Text('Logout')),
       ],
       child: Container(
-        width: 48,
-        height: 48,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF60A5FA), Color(0xFF8B5CF6)],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.25),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          color: AppTheme.primaryColor,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Obx(() {
@@ -573,7 +561,7 @@ class _ProfileMenu extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 18,
+                fontSize: 16,
               ),
             );
           }),
@@ -668,9 +656,9 @@ class _MobileNavItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppTheme.primaryColor : null,
-                ),
+                      fontWeight: FontWeight.w800,
+                      color: selected ? AppTheme.primaryColor : null,
+                    ),
               ),
             ],
           ),
@@ -728,15 +716,15 @@ class _DashboardBackground extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? const [
-            Color(0xFF0B1120),
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-          ]
+                  Color(0xFF0B1120),
+                  Color(0xFF0F172A),
+                  Color(0xFF111827),
+                ]
               : const [
-            Color(0xFFF8FBFF),
-            Color(0xFFF3F7FF),
-            Color(0xFFEFF6FF),
-          ],
+                  Color(0xFFF8FBFF),
+                  Color(0xFFF3F7FF),
+                  Color(0xFFEFF6FF),
+                ],
         ),
       ),
       child: Stack(

@@ -148,7 +148,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
   Widget _buildCategoryDropdown() {
     return Obx(() => DropdownButtonFormField<String>(
-      value: _selectedCategoryId,
+      initialValue: _selectedCategoryId,
       decoration: const InputDecoration(labelText: 'Category', prefixIcon: Icon(Icons.category_outlined)),
       items: controller.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
       onChanged: (v) => setState(() => _selectedCategoryId = v),
@@ -158,7 +158,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
   Widget _buildBrandDropdown() {
     return Obx(() => DropdownButtonFormField<String>(
-      value: _selectedBrandId,
+      initialValue: _selectedBrandId,
       decoration: const InputDecoration(labelText: 'Brand', prefixIcon: Icon(Icons.branding_watermark_outlined)),
       items: controller.brands.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
       onChanged: (v) => setState(() => _selectedBrandId = v),

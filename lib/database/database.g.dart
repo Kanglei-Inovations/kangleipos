@@ -876,6 +876,11 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
       'barcode', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _skuMeta = const VerificationMeta('sku');
+  @override
+  late final GeneratedColumn<String> sku = GeneratedColumn<String>(
+      'sku', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _categoryIdMeta =
       const VerificationMeta('categoryId');
   @override
@@ -905,6 +910,25 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   late final GeneratedColumn<double> costPrice = GeneratedColumn<double>(
       'cost_price', aliasedName, true,
       type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _mrpMeta = const VerificationMeta('mrp');
+  @override
+  late final GeneratedColumn<double> mrp = GeneratedColumn<double>(
+      'mrp', aliasedName, true,
+      type: DriftSqlType.double, requiredDuringInsert: false);
+  static const VerificationMeta _discountTypeMeta =
+      const VerificationMeta('discountType');
+  @override
+  late final GeneratedColumn<String> discountType = GeneratedColumn<String>(
+      'discount_type', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _discountValueMeta =
+      const VerificationMeta('discountValue');
+  @override
+  late final GeneratedColumn<double> discountValue = GeneratedColumn<double>(
+      'discount_value', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
   static const VerificationMeta _stockQuantityMeta =
       const VerificationMeta('stockQuantity');
   @override
@@ -921,6 +945,38 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       type: DriftSqlType.double,
       requiredDuringInsert: false,
       defaultValue: const Constant(5.0));
+  static const VerificationMeta _trackInventoryMeta =
+      const VerificationMeta('trackInventory');
+  @override
+  late final GeneratedColumn<bool> trackInventory = GeneratedColumn<bool>(
+      'track_inventory', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("track_inventory" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _reorderLevelMeta =
+      const VerificationMeta('reorderLevel');
+  @override
+  late final GeneratedColumn<double> reorderLevel = GeneratedColumn<double>(
+      'reorder_level', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
+  static const VerificationMeta _reorderQuantityMeta =
+      const VerificationMeta('reorderQuantity');
+  @override
+  late final GeneratedColumn<double> reorderQuantity = GeneratedColumn<double>(
+      'reorder_quantity', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
+  static const VerificationMeta _warehouseMeta =
+      const VerificationMeta('warehouse');
+  @override
+  late final GeneratedColumn<String> warehouse = GeneratedColumn<String>(
+      'warehouse', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _unitMeta = const VerificationMeta('unit');
   @override
   late final GeneratedColumn<String> unit = GeneratedColumn<String>(
@@ -932,6 +988,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   late final GeneratedColumn<String> hsnSac = GeneratedColumn<String>(
       'hsn_sac', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _taxClassMeta =
+      const VerificationMeta('taxClass');
+  @override
+  late final GeneratedColumn<String> taxClass = GeneratedColumn<String>(
+      'tax_class', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _gstRateMeta =
       const VerificationMeta('gstRate');
@@ -947,12 +1009,41 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
       'image_url', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _expiryDateMeta =
-      const VerificationMeta('expiryDate');
+  static const VerificationMeta _imagesMeta = const VerificationMeta('images');
   @override
-  late final GeneratedColumn<DateTime> expiryDate = GeneratedColumn<DateTime>(
-      'expiry_date', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  late final GeneratedColumn<String> images = GeneratedColumn<String>(
+      'images', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _warrantyPeriodMeta =
+      const VerificationMeta('warrantyPeriod');
+  @override
+  late final GeneratedColumn<String> warrantyPeriod = GeneratedColumn<String>(
+      'warranty_period', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _expiryPeriodMeta =
+      const VerificationMeta('expiryPeriod');
+  @override
+  late final GeneratedColumn<String> expiryPeriod = GeneratedColumn<String>(
+      'expiry_period', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
+  @override
+  late final GeneratedColumn<String> tags = GeneratedColumn<String>(
+      'tags', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('Active'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -974,17 +1065,31 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         id,
         name,
         barcode,
+        sku,
         categoryId,
         brandId,
         price,
         costPrice,
+        mrp,
+        discountType,
+        discountValue,
         stockQuantity,
         lowStockAlert,
+        trackInventory,
+        reorderLevel,
+        reorderQuantity,
+        warehouse,
         unit,
         hsnSac,
+        taxClass,
         gstRate,
         imageUrl,
-        expiryDate,
+        images,
+        description,
+        warrantyPeriod,
+        expiryPeriod,
+        tags,
+        status,
         createdAt,
         updatedAt
       ];
@@ -1013,6 +1118,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(_barcodeMeta,
           barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta));
     }
+    if (data.containsKey('sku')) {
+      context.handle(
+          _skuMeta, sku.isAcceptableOrUnknown(data['sku']!, _skuMeta));
+    }
     if (data.containsKey('category_id')) {
       context.handle(
           _categoryIdMeta,
@@ -1033,6 +1142,22 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(_costPriceMeta,
           costPrice.isAcceptableOrUnknown(data['cost_price']!, _costPriceMeta));
     }
+    if (data.containsKey('mrp')) {
+      context.handle(
+          _mrpMeta, mrp.isAcceptableOrUnknown(data['mrp']!, _mrpMeta));
+    }
+    if (data.containsKey('discount_type')) {
+      context.handle(
+          _discountTypeMeta,
+          discountType.isAcceptableOrUnknown(
+              data['discount_type']!, _discountTypeMeta));
+    }
+    if (data.containsKey('discount_value')) {
+      context.handle(
+          _discountValueMeta,
+          discountValue.isAcceptableOrUnknown(
+              data['discount_value']!, _discountValueMeta));
+    }
     if (data.containsKey('stock_quantity')) {
       context.handle(
           _stockQuantityMeta,
@@ -1045,6 +1170,28 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           lowStockAlert.isAcceptableOrUnknown(
               data['low_stock_alert']!, _lowStockAlertMeta));
     }
+    if (data.containsKey('track_inventory')) {
+      context.handle(
+          _trackInventoryMeta,
+          trackInventory.isAcceptableOrUnknown(
+              data['track_inventory']!, _trackInventoryMeta));
+    }
+    if (data.containsKey('reorder_level')) {
+      context.handle(
+          _reorderLevelMeta,
+          reorderLevel.isAcceptableOrUnknown(
+              data['reorder_level']!, _reorderLevelMeta));
+    }
+    if (data.containsKey('reorder_quantity')) {
+      context.handle(
+          _reorderQuantityMeta,
+          reorderQuantity.isAcceptableOrUnknown(
+              data['reorder_quantity']!, _reorderQuantityMeta));
+    }
+    if (data.containsKey('warehouse')) {
+      context.handle(_warehouseMeta,
+          warehouse.isAcceptableOrUnknown(data['warehouse']!, _warehouseMeta));
+    }
     if (data.containsKey('unit')) {
       context.handle(
           _unitMeta, unit.isAcceptableOrUnknown(data['unit']!, _unitMeta));
@@ -1052,6 +1199,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     if (data.containsKey('hsn_sac')) {
       context.handle(_hsnSacMeta,
           hsnSac.isAcceptableOrUnknown(data['hsn_sac']!, _hsnSacMeta));
+    }
+    if (data.containsKey('tax_class')) {
+      context.handle(_taxClassMeta,
+          taxClass.isAcceptableOrUnknown(data['tax_class']!, _taxClassMeta));
     }
     if (data.containsKey('gst_rate')) {
       context.handle(_gstRateMeta,
@@ -1061,11 +1212,35 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(_imageUrlMeta,
           imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta));
     }
-    if (data.containsKey('expiry_date')) {
+    if (data.containsKey('images')) {
+      context.handle(_imagesMeta,
+          images.isAcceptableOrUnknown(data['images']!, _imagesMeta));
+    }
+    if (data.containsKey('description')) {
       context.handle(
-          _expiryDateMeta,
-          expiryDate.isAcceptableOrUnknown(
-              data['expiry_date']!, _expiryDateMeta));
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('warranty_period')) {
+      context.handle(
+          _warrantyPeriodMeta,
+          warrantyPeriod.isAcceptableOrUnknown(
+              data['warranty_period']!, _warrantyPeriodMeta));
+    }
+    if (data.containsKey('expiry_period')) {
+      context.handle(
+          _expiryPeriodMeta,
+          expiryPeriod.isAcceptableOrUnknown(
+              data['expiry_period']!, _expiryPeriodMeta));
+    }
+    if (data.containsKey('tags')) {
+      context.handle(
+          _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -1090,6 +1265,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       barcode: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}barcode']),
+      sku: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sku']),
       categoryId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}category_id']),
       brandId: attachedDatabase.typeMapping
@@ -1098,20 +1275,46 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
           .read(DriftSqlType.double, data['${effectivePrefix}price'])!,
       costPrice: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}cost_price']),
+      mrp: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}mrp']),
+      discountType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}discount_type']),
+      discountValue: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}discount_value'])!,
       stockQuantity: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}stock_quantity'])!,
       lowStockAlert: attachedDatabase.typeMapping.read(
           DriftSqlType.double, data['${effectivePrefix}low_stock_alert'])!,
+      trackInventory: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}track_inventory'])!,
+      reorderLevel: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}reorder_level'])!,
+      reorderQuantity: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}reorder_quantity'])!,
+      warehouse: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warehouse']),
       unit: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}unit'])!,
       hsnSac: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}hsn_sac']),
+      taxClass: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tax_class']),
       gstRate: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}gst_rate'])!,
       imageUrl: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}image_url']),
-      expiryDate: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}expiry_date']),
+      images: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}images']),
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      warrantyPeriod: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}warranty_period']),
+      expiryPeriod: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}expiry_period']),
+      tags: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tags']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -1129,34 +1332,62 @@ class Product extends DataClass implements Insertable<Product> {
   final String id;
   final String name;
   final String? barcode;
+  final String? sku;
   final String? categoryId;
   final String? brandId;
   final double price;
   final double? costPrice;
+  final double? mrp;
+  final String? discountType;
+  final double discountValue;
   final double stockQuantity;
   final double lowStockAlert;
+  final bool trackInventory;
+  final double reorderLevel;
+  final double reorderQuantity;
+  final String? warehouse;
   final String unit;
   final String? hsnSac;
+  final String? taxClass;
   final double gstRate;
   final String? imageUrl;
-  final DateTime? expiryDate;
+  final String? images;
+  final String? description;
+  final String? warrantyPeriod;
+  final String? expiryPeriod;
+  final String? tags;
+  final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Product(
       {required this.id,
       required this.name,
       this.barcode,
+      this.sku,
       this.categoryId,
       this.brandId,
       required this.price,
       this.costPrice,
+      this.mrp,
+      this.discountType,
+      required this.discountValue,
       required this.stockQuantity,
       required this.lowStockAlert,
+      required this.trackInventory,
+      required this.reorderLevel,
+      required this.reorderQuantity,
+      this.warehouse,
       required this.unit,
       this.hsnSac,
+      this.taxClass,
       required this.gstRate,
       this.imageUrl,
-      this.expiryDate,
+      this.images,
+      this.description,
+      this.warrantyPeriod,
+      this.expiryPeriod,
+      this.tags,
+      required this.status,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -1166,6 +1397,9 @@ class Product extends DataClass implements Insertable<Product> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
+    }
+    if (!nullToAbsent || sku != null) {
+      map['sku'] = Variable<String>(sku);
     }
     if (!nullToAbsent || categoryId != null) {
       map['category_id'] = Variable<String>(categoryId);
@@ -1177,19 +1411,48 @@ class Product extends DataClass implements Insertable<Product> {
     if (!nullToAbsent || costPrice != null) {
       map['cost_price'] = Variable<double>(costPrice);
     }
+    if (!nullToAbsent || mrp != null) {
+      map['mrp'] = Variable<double>(mrp);
+    }
+    if (!nullToAbsent || discountType != null) {
+      map['discount_type'] = Variable<String>(discountType);
+    }
+    map['discount_value'] = Variable<double>(discountValue);
     map['stock_quantity'] = Variable<double>(stockQuantity);
     map['low_stock_alert'] = Variable<double>(lowStockAlert);
+    map['track_inventory'] = Variable<bool>(trackInventory);
+    map['reorder_level'] = Variable<double>(reorderLevel);
+    map['reorder_quantity'] = Variable<double>(reorderQuantity);
+    if (!nullToAbsent || warehouse != null) {
+      map['warehouse'] = Variable<String>(warehouse);
+    }
     map['unit'] = Variable<String>(unit);
     if (!nullToAbsent || hsnSac != null) {
       map['hsn_sac'] = Variable<String>(hsnSac);
+    }
+    if (!nullToAbsent || taxClass != null) {
+      map['tax_class'] = Variable<String>(taxClass);
     }
     map['gst_rate'] = Variable<double>(gstRate);
     if (!nullToAbsent || imageUrl != null) {
       map['image_url'] = Variable<String>(imageUrl);
     }
-    if (!nullToAbsent || expiryDate != null) {
-      map['expiry_date'] = Variable<DateTime>(expiryDate);
+    if (!nullToAbsent || images != null) {
+      map['images'] = Variable<String>(images);
     }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || warrantyPeriod != null) {
+      map['warranty_period'] = Variable<String>(warrantyPeriod);
+    }
+    if (!nullToAbsent || expiryPeriod != null) {
+      map['expiry_period'] = Variable<String>(expiryPeriod);
+    }
+    if (!nullToAbsent || tags != null) {
+      map['tags'] = Variable<String>(tags);
+    }
+    map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1202,6 +1465,7 @@ class Product extends DataClass implements Insertable<Product> {
       barcode: barcode == null && nullToAbsent
           ? const Value.absent()
           : Value(barcode),
+      sku: sku == null && nullToAbsent ? const Value.absent() : Value(sku),
       categoryId: categoryId == null && nullToAbsent
           ? const Value.absent()
           : Value(categoryId),
@@ -1212,18 +1476,42 @@ class Product extends DataClass implements Insertable<Product> {
       costPrice: costPrice == null && nullToAbsent
           ? const Value.absent()
           : Value(costPrice),
+      mrp: mrp == null && nullToAbsent ? const Value.absent() : Value(mrp),
+      discountType: discountType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountType),
+      discountValue: Value(discountValue),
       stockQuantity: Value(stockQuantity),
       lowStockAlert: Value(lowStockAlert),
+      trackInventory: Value(trackInventory),
+      reorderLevel: Value(reorderLevel),
+      reorderQuantity: Value(reorderQuantity),
+      warehouse: warehouse == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warehouse),
       unit: Value(unit),
       hsnSac:
           hsnSac == null && nullToAbsent ? const Value.absent() : Value(hsnSac),
+      taxClass: taxClass == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taxClass),
       gstRate: Value(gstRate),
       imageUrl: imageUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(imageUrl),
-      expiryDate: expiryDate == null && nullToAbsent
+      images:
+          images == null && nullToAbsent ? const Value.absent() : Value(images),
+      description: description == null && nullToAbsent
           ? const Value.absent()
-          : Value(expiryDate),
+          : Value(description),
+      warrantyPeriod: warrantyPeriod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warrantyPeriod),
+      expiryPeriod: expiryPeriod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiryPeriod),
+      tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
+      status: Value(status),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1236,17 +1524,31 @@ class Product extends DataClass implements Insertable<Product> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       barcode: serializer.fromJson<String?>(json['barcode']),
+      sku: serializer.fromJson<String?>(json['sku']),
       categoryId: serializer.fromJson<String?>(json['categoryId']),
       brandId: serializer.fromJson<String?>(json['brandId']),
       price: serializer.fromJson<double>(json['price']),
       costPrice: serializer.fromJson<double?>(json['costPrice']),
+      mrp: serializer.fromJson<double?>(json['mrp']),
+      discountType: serializer.fromJson<String?>(json['discountType']),
+      discountValue: serializer.fromJson<double>(json['discountValue']),
       stockQuantity: serializer.fromJson<double>(json['stockQuantity']),
       lowStockAlert: serializer.fromJson<double>(json['lowStockAlert']),
+      trackInventory: serializer.fromJson<bool>(json['trackInventory']),
+      reorderLevel: serializer.fromJson<double>(json['reorderLevel']),
+      reorderQuantity: serializer.fromJson<double>(json['reorderQuantity']),
+      warehouse: serializer.fromJson<String?>(json['warehouse']),
       unit: serializer.fromJson<String>(json['unit']),
       hsnSac: serializer.fromJson<String?>(json['hsnSac']),
+      taxClass: serializer.fromJson<String?>(json['taxClass']),
       gstRate: serializer.fromJson<double>(json['gstRate']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
-      expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
+      images: serializer.fromJson<String?>(json['images']),
+      description: serializer.fromJson<String?>(json['description']),
+      warrantyPeriod: serializer.fromJson<String?>(json['warrantyPeriod']),
+      expiryPeriod: serializer.fromJson<String?>(json['expiryPeriod']),
+      tags: serializer.fromJson<String?>(json['tags']),
+      status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1258,17 +1560,31 @@ class Product extends DataClass implements Insertable<Product> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'barcode': serializer.toJson<String?>(barcode),
+      'sku': serializer.toJson<String?>(sku),
       'categoryId': serializer.toJson<String?>(categoryId),
       'brandId': serializer.toJson<String?>(brandId),
       'price': serializer.toJson<double>(price),
       'costPrice': serializer.toJson<double?>(costPrice),
+      'mrp': serializer.toJson<double?>(mrp),
+      'discountType': serializer.toJson<String?>(discountType),
+      'discountValue': serializer.toJson<double>(discountValue),
       'stockQuantity': serializer.toJson<double>(stockQuantity),
       'lowStockAlert': serializer.toJson<double>(lowStockAlert),
+      'trackInventory': serializer.toJson<bool>(trackInventory),
+      'reorderLevel': serializer.toJson<double>(reorderLevel),
+      'reorderQuantity': serializer.toJson<double>(reorderQuantity),
+      'warehouse': serializer.toJson<String?>(warehouse),
       'unit': serializer.toJson<String>(unit),
       'hsnSac': serializer.toJson<String?>(hsnSac),
+      'taxClass': serializer.toJson<String?>(taxClass),
       'gstRate': serializer.toJson<double>(gstRate),
       'imageUrl': serializer.toJson<String?>(imageUrl),
-      'expiryDate': serializer.toJson<DateTime?>(expiryDate),
+      'images': serializer.toJson<String?>(images),
+      'description': serializer.toJson<String?>(description),
+      'warrantyPeriod': serializer.toJson<String?>(warrantyPeriod),
+      'expiryPeriod': serializer.toJson<String?>(expiryPeriod),
+      'tags': serializer.toJson<String?>(tags),
+      'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1278,34 +1594,65 @@ class Product extends DataClass implements Insertable<Product> {
           {String? id,
           String? name,
           Value<String?> barcode = const Value.absent(),
+          Value<String?> sku = const Value.absent(),
           Value<String?> categoryId = const Value.absent(),
           Value<String?> brandId = const Value.absent(),
           double? price,
           Value<double?> costPrice = const Value.absent(),
+          Value<double?> mrp = const Value.absent(),
+          Value<String?> discountType = const Value.absent(),
+          double? discountValue,
           double? stockQuantity,
           double? lowStockAlert,
+          bool? trackInventory,
+          double? reorderLevel,
+          double? reorderQuantity,
+          Value<String?> warehouse = const Value.absent(),
           String? unit,
           Value<String?> hsnSac = const Value.absent(),
+          Value<String?> taxClass = const Value.absent(),
           double? gstRate,
           Value<String?> imageUrl = const Value.absent(),
-          Value<DateTime?> expiryDate = const Value.absent(),
+          Value<String?> images = const Value.absent(),
+          Value<String?> description = const Value.absent(),
+          Value<String?> warrantyPeriod = const Value.absent(),
+          Value<String?> expiryPeriod = const Value.absent(),
+          Value<String?> tags = const Value.absent(),
+          String? status,
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       Product(
         id: id ?? this.id,
         name: name ?? this.name,
         barcode: barcode.present ? barcode.value : this.barcode,
+        sku: sku.present ? sku.value : this.sku,
         categoryId: categoryId.present ? categoryId.value : this.categoryId,
         brandId: brandId.present ? brandId.value : this.brandId,
         price: price ?? this.price,
         costPrice: costPrice.present ? costPrice.value : this.costPrice,
+        mrp: mrp.present ? mrp.value : this.mrp,
+        discountType:
+            discountType.present ? discountType.value : this.discountType,
+        discountValue: discountValue ?? this.discountValue,
         stockQuantity: stockQuantity ?? this.stockQuantity,
         lowStockAlert: lowStockAlert ?? this.lowStockAlert,
+        trackInventory: trackInventory ?? this.trackInventory,
+        reorderLevel: reorderLevel ?? this.reorderLevel,
+        reorderQuantity: reorderQuantity ?? this.reorderQuantity,
+        warehouse: warehouse.present ? warehouse.value : this.warehouse,
         unit: unit ?? this.unit,
         hsnSac: hsnSac.present ? hsnSac.value : this.hsnSac,
+        taxClass: taxClass.present ? taxClass.value : this.taxClass,
         gstRate: gstRate ?? this.gstRate,
         imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
-        expiryDate: expiryDate.present ? expiryDate.value : this.expiryDate,
+        images: images.present ? images.value : this.images,
+        description: description.present ? description.value : this.description,
+        warrantyPeriod:
+            warrantyPeriod.present ? warrantyPeriod.value : this.warrantyPeriod,
+        expiryPeriod:
+            expiryPeriod.present ? expiryPeriod.value : this.expiryPeriod,
+        tags: tags.present ? tags.value : this.tags,
+        status: status ?? this.status,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -1314,23 +1661,51 @@ class Product extends DataClass implements Insertable<Product> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
+      sku: data.sku.present ? data.sku.value : this.sku,
       categoryId:
           data.categoryId.present ? data.categoryId.value : this.categoryId,
       brandId: data.brandId.present ? data.brandId.value : this.brandId,
       price: data.price.present ? data.price.value : this.price,
       costPrice: data.costPrice.present ? data.costPrice.value : this.costPrice,
+      mrp: data.mrp.present ? data.mrp.value : this.mrp,
+      discountType: data.discountType.present
+          ? data.discountType.value
+          : this.discountType,
+      discountValue: data.discountValue.present
+          ? data.discountValue.value
+          : this.discountValue,
       stockQuantity: data.stockQuantity.present
           ? data.stockQuantity.value
           : this.stockQuantity,
       lowStockAlert: data.lowStockAlert.present
           ? data.lowStockAlert.value
           : this.lowStockAlert,
+      trackInventory: data.trackInventory.present
+          ? data.trackInventory.value
+          : this.trackInventory,
+      reorderLevel: data.reorderLevel.present
+          ? data.reorderLevel.value
+          : this.reorderLevel,
+      reorderQuantity: data.reorderQuantity.present
+          ? data.reorderQuantity.value
+          : this.reorderQuantity,
+      warehouse: data.warehouse.present ? data.warehouse.value : this.warehouse,
       unit: data.unit.present ? data.unit.value : this.unit,
       hsnSac: data.hsnSac.present ? data.hsnSac.value : this.hsnSac,
+      taxClass: data.taxClass.present ? data.taxClass.value : this.taxClass,
       gstRate: data.gstRate.present ? data.gstRate.value : this.gstRate,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
-      expiryDate:
-          data.expiryDate.present ? data.expiryDate.value : this.expiryDate,
+      images: data.images.present ? data.images.value : this.images,
+      description:
+          data.description.present ? data.description.value : this.description,
+      warrantyPeriod: data.warrantyPeriod.present
+          ? data.warrantyPeriod.value
+          : this.warrantyPeriod,
+      expiryPeriod: data.expiryPeriod.present
+          ? data.expiryPeriod.value
+          : this.expiryPeriod,
+      tags: data.tags.present ? data.tags.value : this.tags,
+      status: data.status.present ? data.status.value : this.status,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1342,17 +1717,31 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('barcode: $barcode, ')
+          ..write('sku: $sku, ')
           ..write('categoryId: $categoryId, ')
           ..write('brandId: $brandId, ')
           ..write('price: $price, ')
           ..write('costPrice: $costPrice, ')
+          ..write('mrp: $mrp, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
           ..write('stockQuantity: $stockQuantity, ')
           ..write('lowStockAlert: $lowStockAlert, ')
+          ..write('trackInventory: $trackInventory, ')
+          ..write('reorderLevel: $reorderLevel, ')
+          ..write('reorderQuantity: $reorderQuantity, ')
+          ..write('warehouse: $warehouse, ')
           ..write('unit: $unit, ')
           ..write('hsnSac: $hsnSac, ')
+          ..write('taxClass: $taxClass, ')
           ..write('gstRate: $gstRate, ')
           ..write('imageUrl: $imageUrl, ')
-          ..write('expiryDate: $expiryDate, ')
+          ..write('images: $images, ')
+          ..write('description: $description, ')
+          ..write('warrantyPeriod: $warrantyPeriod, ')
+          ..write('expiryPeriod: $expiryPeriod, ')
+          ..write('tags: $tags, ')
+          ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1360,23 +1749,38 @@ class Product extends DataClass implements Insertable<Product> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      name,
-      barcode,
-      categoryId,
-      brandId,
-      price,
-      costPrice,
-      stockQuantity,
-      lowStockAlert,
-      unit,
-      hsnSac,
-      gstRate,
-      imageUrl,
-      expiryDate,
-      createdAt,
-      updatedAt);
+  int get hashCode => Object.hashAll([
+        id,
+        name,
+        barcode,
+        sku,
+        categoryId,
+        brandId,
+        price,
+        costPrice,
+        mrp,
+        discountType,
+        discountValue,
+        stockQuantity,
+        lowStockAlert,
+        trackInventory,
+        reorderLevel,
+        reorderQuantity,
+        warehouse,
+        unit,
+        hsnSac,
+        taxClass,
+        gstRate,
+        imageUrl,
+        images,
+        description,
+        warrantyPeriod,
+        expiryPeriod,
+        tags,
+        status,
+        createdAt,
+        updatedAt
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1384,17 +1788,31 @@ class Product extends DataClass implements Insertable<Product> {
           other.id == this.id &&
           other.name == this.name &&
           other.barcode == this.barcode &&
+          other.sku == this.sku &&
           other.categoryId == this.categoryId &&
           other.brandId == this.brandId &&
           other.price == this.price &&
           other.costPrice == this.costPrice &&
+          other.mrp == this.mrp &&
+          other.discountType == this.discountType &&
+          other.discountValue == this.discountValue &&
           other.stockQuantity == this.stockQuantity &&
           other.lowStockAlert == this.lowStockAlert &&
+          other.trackInventory == this.trackInventory &&
+          other.reorderLevel == this.reorderLevel &&
+          other.reorderQuantity == this.reorderQuantity &&
+          other.warehouse == this.warehouse &&
           other.unit == this.unit &&
           other.hsnSac == this.hsnSac &&
+          other.taxClass == this.taxClass &&
           other.gstRate == this.gstRate &&
           other.imageUrl == this.imageUrl &&
-          other.expiryDate == this.expiryDate &&
+          other.images == this.images &&
+          other.description == this.description &&
+          other.warrantyPeriod == this.warrantyPeriod &&
+          other.expiryPeriod == this.expiryPeriod &&
+          other.tags == this.tags &&
+          other.status == this.status &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1403,17 +1821,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> id;
   final Value<String> name;
   final Value<String?> barcode;
+  final Value<String?> sku;
   final Value<String?> categoryId;
   final Value<String?> brandId;
   final Value<double> price;
   final Value<double?> costPrice;
+  final Value<double?> mrp;
+  final Value<String?> discountType;
+  final Value<double> discountValue;
   final Value<double> stockQuantity;
   final Value<double> lowStockAlert;
+  final Value<bool> trackInventory;
+  final Value<double> reorderLevel;
+  final Value<double> reorderQuantity;
+  final Value<String?> warehouse;
   final Value<String> unit;
   final Value<String?> hsnSac;
+  final Value<String?> taxClass;
   final Value<double> gstRate;
   final Value<String?> imageUrl;
-  final Value<DateTime?> expiryDate;
+  final Value<String?> images;
+  final Value<String?> description;
+  final Value<String?> warrantyPeriod;
+  final Value<String?> expiryPeriod;
+  final Value<String?> tags;
+  final Value<String> status;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1421,17 +1853,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.barcode = const Value.absent(),
+    this.sku = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.brandId = const Value.absent(),
     this.price = const Value.absent(),
     this.costPrice = const Value.absent(),
+    this.mrp = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
     this.stockQuantity = const Value.absent(),
     this.lowStockAlert = const Value.absent(),
+    this.trackInventory = const Value.absent(),
+    this.reorderLevel = const Value.absent(),
+    this.reorderQuantity = const Value.absent(),
+    this.warehouse = const Value.absent(),
     this.unit = const Value.absent(),
     this.hsnSac = const Value.absent(),
+    this.taxClass = const Value.absent(),
     this.gstRate = const Value.absent(),
     this.imageUrl = const Value.absent(),
-    this.expiryDate = const Value.absent(),
+    this.images = const Value.absent(),
+    this.description = const Value.absent(),
+    this.warrantyPeriod = const Value.absent(),
+    this.expiryPeriod = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1440,17 +1886,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     required String id,
     required String name,
     this.barcode = const Value.absent(),
+    this.sku = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.brandId = const Value.absent(),
     required double price,
     this.costPrice = const Value.absent(),
+    this.mrp = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
     this.stockQuantity = const Value.absent(),
     this.lowStockAlert = const Value.absent(),
+    this.trackInventory = const Value.absent(),
+    this.reorderLevel = const Value.absent(),
+    this.reorderQuantity = const Value.absent(),
+    this.warehouse = const Value.absent(),
     this.unit = const Value.absent(),
     this.hsnSac = const Value.absent(),
+    this.taxClass = const Value.absent(),
     this.gstRate = const Value.absent(),
     this.imageUrl = const Value.absent(),
-    this.expiryDate = const Value.absent(),
+    this.images = const Value.absent(),
+    this.description = const Value.absent(),
+    this.warrantyPeriod = const Value.absent(),
+    this.expiryPeriod = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1461,17 +1921,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? barcode,
+    Expression<String>? sku,
     Expression<String>? categoryId,
     Expression<String>? brandId,
     Expression<double>? price,
     Expression<double>? costPrice,
+    Expression<double>? mrp,
+    Expression<String>? discountType,
+    Expression<double>? discountValue,
     Expression<double>? stockQuantity,
     Expression<double>? lowStockAlert,
+    Expression<bool>? trackInventory,
+    Expression<double>? reorderLevel,
+    Expression<double>? reorderQuantity,
+    Expression<String>? warehouse,
     Expression<String>? unit,
     Expression<String>? hsnSac,
+    Expression<String>? taxClass,
     Expression<double>? gstRate,
     Expression<String>? imageUrl,
-    Expression<DateTime>? expiryDate,
+    Expression<String>? images,
+    Expression<String>? description,
+    Expression<String>? warrantyPeriod,
+    Expression<String>? expiryPeriod,
+    Expression<String>? tags,
+    Expression<String>? status,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1480,17 +1954,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (barcode != null) 'barcode': barcode,
+      if (sku != null) 'sku': sku,
       if (categoryId != null) 'category_id': categoryId,
       if (brandId != null) 'brand_id': brandId,
       if (price != null) 'price': price,
       if (costPrice != null) 'cost_price': costPrice,
+      if (mrp != null) 'mrp': mrp,
+      if (discountType != null) 'discount_type': discountType,
+      if (discountValue != null) 'discount_value': discountValue,
       if (stockQuantity != null) 'stock_quantity': stockQuantity,
       if (lowStockAlert != null) 'low_stock_alert': lowStockAlert,
+      if (trackInventory != null) 'track_inventory': trackInventory,
+      if (reorderLevel != null) 'reorder_level': reorderLevel,
+      if (reorderQuantity != null) 'reorder_quantity': reorderQuantity,
+      if (warehouse != null) 'warehouse': warehouse,
       if (unit != null) 'unit': unit,
       if (hsnSac != null) 'hsn_sac': hsnSac,
+      if (taxClass != null) 'tax_class': taxClass,
       if (gstRate != null) 'gst_rate': gstRate,
       if (imageUrl != null) 'image_url': imageUrl,
-      if (expiryDate != null) 'expiry_date': expiryDate,
+      if (images != null) 'images': images,
+      if (description != null) 'description': description,
+      if (warrantyPeriod != null) 'warranty_period': warrantyPeriod,
+      if (expiryPeriod != null) 'expiry_period': expiryPeriod,
+      if (tags != null) 'tags': tags,
+      if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1501,17 +1989,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       {Value<String>? id,
       Value<String>? name,
       Value<String?>? barcode,
+      Value<String?>? sku,
       Value<String?>? categoryId,
       Value<String?>? brandId,
       Value<double>? price,
       Value<double?>? costPrice,
+      Value<double?>? mrp,
+      Value<String?>? discountType,
+      Value<double>? discountValue,
       Value<double>? stockQuantity,
       Value<double>? lowStockAlert,
+      Value<bool>? trackInventory,
+      Value<double>? reorderLevel,
+      Value<double>? reorderQuantity,
+      Value<String?>? warehouse,
       Value<String>? unit,
       Value<String?>? hsnSac,
+      Value<String?>? taxClass,
       Value<double>? gstRate,
       Value<String?>? imageUrl,
-      Value<DateTime?>? expiryDate,
+      Value<String?>? images,
+      Value<String?>? description,
+      Value<String?>? warrantyPeriod,
+      Value<String?>? expiryPeriod,
+      Value<String?>? tags,
+      Value<String>? status,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -1519,17 +2021,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       id: id ?? this.id,
       name: name ?? this.name,
       barcode: barcode ?? this.barcode,
+      sku: sku ?? this.sku,
       categoryId: categoryId ?? this.categoryId,
       brandId: brandId ?? this.brandId,
       price: price ?? this.price,
       costPrice: costPrice ?? this.costPrice,
+      mrp: mrp ?? this.mrp,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
       stockQuantity: stockQuantity ?? this.stockQuantity,
       lowStockAlert: lowStockAlert ?? this.lowStockAlert,
+      trackInventory: trackInventory ?? this.trackInventory,
+      reorderLevel: reorderLevel ?? this.reorderLevel,
+      reorderQuantity: reorderQuantity ?? this.reorderQuantity,
+      warehouse: warehouse ?? this.warehouse,
       unit: unit ?? this.unit,
       hsnSac: hsnSac ?? this.hsnSac,
+      taxClass: taxClass ?? this.taxClass,
       gstRate: gstRate ?? this.gstRate,
       imageUrl: imageUrl ?? this.imageUrl,
-      expiryDate: expiryDate ?? this.expiryDate,
+      images: images ?? this.images,
+      description: description ?? this.description,
+      warrantyPeriod: warrantyPeriod ?? this.warrantyPeriod,
+      expiryPeriod: expiryPeriod ?? this.expiryPeriod,
+      tags: tags ?? this.tags,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1548,6 +2064,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
+    if (sku.present) {
+      map['sku'] = Variable<String>(sku.value);
+    }
     if (categoryId.present) {
       map['category_id'] = Variable<String>(categoryId.value);
     }
@@ -1560,11 +2079,32 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (costPrice.present) {
       map['cost_price'] = Variable<double>(costPrice.value);
     }
+    if (mrp.present) {
+      map['mrp'] = Variable<double>(mrp.value);
+    }
+    if (discountType.present) {
+      map['discount_type'] = Variable<String>(discountType.value);
+    }
+    if (discountValue.present) {
+      map['discount_value'] = Variable<double>(discountValue.value);
+    }
     if (stockQuantity.present) {
       map['stock_quantity'] = Variable<double>(stockQuantity.value);
     }
     if (lowStockAlert.present) {
       map['low_stock_alert'] = Variable<double>(lowStockAlert.value);
+    }
+    if (trackInventory.present) {
+      map['track_inventory'] = Variable<bool>(trackInventory.value);
+    }
+    if (reorderLevel.present) {
+      map['reorder_level'] = Variable<double>(reorderLevel.value);
+    }
+    if (reorderQuantity.present) {
+      map['reorder_quantity'] = Variable<double>(reorderQuantity.value);
+    }
+    if (warehouse.present) {
+      map['warehouse'] = Variable<String>(warehouse.value);
     }
     if (unit.present) {
       map['unit'] = Variable<String>(unit.value);
@@ -1572,14 +2112,32 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (hsnSac.present) {
       map['hsn_sac'] = Variable<String>(hsnSac.value);
     }
+    if (taxClass.present) {
+      map['tax_class'] = Variable<String>(taxClass.value);
+    }
     if (gstRate.present) {
       map['gst_rate'] = Variable<double>(gstRate.value);
     }
     if (imageUrl.present) {
       map['image_url'] = Variable<String>(imageUrl.value);
     }
-    if (expiryDate.present) {
-      map['expiry_date'] = Variable<DateTime>(expiryDate.value);
+    if (images.present) {
+      map['images'] = Variable<String>(images.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (warrantyPeriod.present) {
+      map['warranty_period'] = Variable<String>(warrantyPeriod.value);
+    }
+    if (expiryPeriod.present) {
+      map['expiry_period'] = Variable<String>(expiryPeriod.value);
+    }
+    if (tags.present) {
+      map['tags'] = Variable<String>(tags.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1599,17 +2157,31 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('barcode: $barcode, ')
+          ..write('sku: $sku, ')
           ..write('categoryId: $categoryId, ')
           ..write('brandId: $brandId, ')
           ..write('price: $price, ')
           ..write('costPrice: $costPrice, ')
+          ..write('mrp: $mrp, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
           ..write('stockQuantity: $stockQuantity, ')
           ..write('lowStockAlert: $lowStockAlert, ')
+          ..write('trackInventory: $trackInventory, ')
+          ..write('reorderLevel: $reorderLevel, ')
+          ..write('reorderQuantity: $reorderQuantity, ')
+          ..write('warehouse: $warehouse, ')
           ..write('unit: $unit, ')
           ..write('hsnSac: $hsnSac, ')
+          ..write('taxClass: $taxClass, ')
           ..write('gstRate: $gstRate, ')
           ..write('imageUrl: $imageUrl, ')
-          ..write('expiryDate: $expiryDate, ')
+          ..write('images: $images, ')
+          ..write('description: $description, ')
+          ..write('warrantyPeriod: $warrantyPeriod, ')
+          ..write('expiryPeriod: $expiryPeriod, ')
+          ..write('tags: $tags, ')
+          ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -5486,17 +6058,31 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   required String id,
   required String name,
   Value<String?> barcode,
+  Value<String?> sku,
   Value<String?> categoryId,
   Value<String?> brandId,
   required double price,
   Value<double?> costPrice,
+  Value<double?> mrp,
+  Value<String?> discountType,
+  Value<double> discountValue,
   Value<double> stockQuantity,
   Value<double> lowStockAlert,
+  Value<bool> trackInventory,
+  Value<double> reorderLevel,
+  Value<double> reorderQuantity,
+  Value<String?> warehouse,
   Value<String> unit,
   Value<String?> hsnSac,
+  Value<String?> taxClass,
   Value<double> gstRate,
   Value<String?> imageUrl,
-  Value<DateTime?> expiryDate,
+  Value<String?> images,
+  Value<String?> description,
+  Value<String?> warrantyPeriod,
+  Value<String?> expiryPeriod,
+  Value<String?> tags,
+  Value<String> status,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -5505,17 +6091,31 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<String> id,
   Value<String> name,
   Value<String?> barcode,
+  Value<String?> sku,
   Value<String?> categoryId,
   Value<String?> brandId,
   Value<double> price,
   Value<double?> costPrice,
+  Value<double?> mrp,
+  Value<String?> discountType,
+  Value<double> discountValue,
   Value<double> stockQuantity,
   Value<double> lowStockAlert,
+  Value<bool> trackInventory,
+  Value<double> reorderLevel,
+  Value<double> reorderQuantity,
+  Value<String?> warehouse,
   Value<String> unit,
   Value<String?> hsnSac,
+  Value<String?> taxClass,
   Value<double> gstRate,
   Value<String?> imageUrl,
-  Value<DateTime?> expiryDate,
+  Value<String?> images,
+  Value<String?> description,
+  Value<String?> warrantyPeriod,
+  Value<String?> expiryPeriod,
+  Value<String?> tags,
+  Value<String> status,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -5588,11 +6188,23 @@ class $$ProductsTableFilterComposer
   ColumnFilters<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get sku => $composableBuilder(
+      column: $table.sku, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get costPrice => $composableBuilder(
       column: $table.costPrice, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get mrp => $composableBuilder(
+      column: $table.mrp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get discountType => $composableBuilder(
+      column: $table.discountType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get discountValue => $composableBuilder(
+      column: $table.discountValue, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get stockQuantity => $composableBuilder(
       column: $table.stockQuantity, builder: (column) => ColumnFilters(column));
@@ -5600,11 +6212,28 @@ class $$ProductsTableFilterComposer
   ColumnFilters<double> get lowStockAlert => $composableBuilder(
       column: $table.lowStockAlert, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<bool> get trackInventory => $composableBuilder(
+      column: $table.trackInventory,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get reorderLevel => $composableBuilder(
+      column: $table.reorderLevel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get reorderQuantity => $composableBuilder(
+      column: $table.reorderQuantity,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warehouse => $composableBuilder(
+      column: $table.warehouse, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get unit => $composableBuilder(
       column: $table.unit, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get hsnSac => $composableBuilder(
       column: $table.hsnSac, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get taxClass => $composableBuilder(
+      column: $table.taxClass, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get gstRate => $composableBuilder(
       column: $table.gstRate, builder: (column) => ColumnFilters(column));
@@ -5612,8 +6241,24 @@ class $$ProductsTableFilterComposer
   ColumnFilters<String> get imageUrl => $composableBuilder(
       column: $table.imageUrl, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get expiryDate => $composableBuilder(
-      column: $table.expiryDate, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get images => $composableBuilder(
+      column: $table.images, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get warrantyPeriod => $composableBuilder(
+      column: $table.warrantyPeriod,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get expiryPeriod => $composableBuilder(
+      column: $table.expiryPeriod, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -5701,11 +6346,25 @@ class $$ProductsTableOrderingComposer
   ColumnOrderings<String> get barcode => $composableBuilder(
       column: $table.barcode, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get sku => $composableBuilder(
+      column: $table.sku, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<double> get price => $composableBuilder(
       column: $table.price, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get costPrice => $composableBuilder(
       column: $table.costPrice, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get mrp => $composableBuilder(
+      column: $table.mrp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get discountType => $composableBuilder(
+      column: $table.discountType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get discountValue => $composableBuilder(
+      column: $table.discountValue,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get stockQuantity => $composableBuilder(
       column: $table.stockQuantity,
@@ -5715,11 +6374,29 @@ class $$ProductsTableOrderingComposer
       column: $table.lowStockAlert,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get trackInventory => $composableBuilder(
+      column: $table.trackInventory,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get reorderLevel => $composableBuilder(
+      column: $table.reorderLevel,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get reorderQuantity => $composableBuilder(
+      column: $table.reorderQuantity,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warehouse => $composableBuilder(
+      column: $table.warehouse, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get unit => $composableBuilder(
       column: $table.unit, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get hsnSac => $composableBuilder(
       column: $table.hsnSac, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get taxClass => $composableBuilder(
+      column: $table.taxClass, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<double> get gstRate => $composableBuilder(
       column: $table.gstRate, builder: (column) => ColumnOrderings(column));
@@ -5727,8 +6404,25 @@ class $$ProductsTableOrderingComposer
   ColumnOrderings<String> get imageUrl => $composableBuilder(
       column: $table.imageUrl, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get expiryDate => $composableBuilder(
-      column: $table.expiryDate, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get images => $composableBuilder(
+      column: $table.images, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get warrantyPeriod => $composableBuilder(
+      column: $table.warrantyPeriod,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get expiryPeriod => $composableBuilder(
+      column: $table.expiryPeriod,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+      column: $table.tags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
@@ -5795,11 +6489,23 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
 
+  GeneratedColumn<String> get sku =>
+      $composableBuilder(column: $table.sku, builder: (column) => column);
+
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
 
   GeneratedColumn<double> get costPrice =>
       $composableBuilder(column: $table.costPrice, builder: (column) => column);
+
+  GeneratedColumn<double> get mrp =>
+      $composableBuilder(column: $table.mrp, builder: (column) => column);
+
+  GeneratedColumn<String> get discountType => $composableBuilder(
+      column: $table.discountType, builder: (column) => column);
+
+  GeneratedColumn<double> get discountValue => $composableBuilder(
+      column: $table.discountValue, builder: (column) => column);
 
   GeneratedColumn<double> get stockQuantity => $composableBuilder(
       column: $table.stockQuantity, builder: (column) => column);
@@ -5807,11 +6513,26 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<double> get lowStockAlert => $composableBuilder(
       column: $table.lowStockAlert, builder: (column) => column);
 
+  GeneratedColumn<bool> get trackInventory => $composableBuilder(
+      column: $table.trackInventory, builder: (column) => column);
+
+  GeneratedColumn<double> get reorderLevel => $composableBuilder(
+      column: $table.reorderLevel, builder: (column) => column);
+
+  GeneratedColumn<double> get reorderQuantity => $composableBuilder(
+      column: $table.reorderQuantity, builder: (column) => column);
+
+  GeneratedColumn<String> get warehouse =>
+      $composableBuilder(column: $table.warehouse, builder: (column) => column);
+
   GeneratedColumn<String> get unit =>
       $composableBuilder(column: $table.unit, builder: (column) => column);
 
   GeneratedColumn<String> get hsnSac =>
       $composableBuilder(column: $table.hsnSac, builder: (column) => column);
+
+  GeneratedColumn<String> get taxClass =>
+      $composableBuilder(column: $table.taxClass, builder: (column) => column);
 
   GeneratedColumn<double> get gstRate =>
       $composableBuilder(column: $table.gstRate, builder: (column) => column);
@@ -5819,8 +6540,23 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get imageUrl =>
       $composableBuilder(column: $table.imageUrl, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get expiryDate => $composableBuilder(
-      column: $table.expiryDate, builder: (column) => column);
+  GeneratedColumn<String> get images =>
+      $composableBuilder(column: $table.images, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get warrantyPeriod => $composableBuilder(
+      column: $table.warrantyPeriod, builder: (column) => column);
+
+  GeneratedColumn<String> get expiryPeriod => $composableBuilder(
+      column: $table.expiryPeriod, builder: (column) => column);
+
+  GeneratedColumn<String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5917,17 +6653,31 @@ class $$ProductsTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String?> barcode = const Value.absent(),
+            Value<String?> sku = const Value.absent(),
             Value<String?> categoryId = const Value.absent(),
             Value<String?> brandId = const Value.absent(),
             Value<double> price = const Value.absent(),
             Value<double?> costPrice = const Value.absent(),
+            Value<double?> mrp = const Value.absent(),
+            Value<String?> discountType = const Value.absent(),
+            Value<double> discountValue = const Value.absent(),
             Value<double> stockQuantity = const Value.absent(),
             Value<double> lowStockAlert = const Value.absent(),
+            Value<bool> trackInventory = const Value.absent(),
+            Value<double> reorderLevel = const Value.absent(),
+            Value<double> reorderQuantity = const Value.absent(),
+            Value<String?> warehouse = const Value.absent(),
             Value<String> unit = const Value.absent(),
             Value<String?> hsnSac = const Value.absent(),
+            Value<String?> taxClass = const Value.absent(),
             Value<double> gstRate = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
-            Value<DateTime?> expiryDate = const Value.absent(),
+            Value<String?> images = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> warrantyPeriod = const Value.absent(),
+            Value<String?> expiryPeriod = const Value.absent(),
+            Value<String?> tags = const Value.absent(),
+            Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -5936,17 +6686,31 @@ class $$ProductsTableTableManager extends RootTableManager<
             id: id,
             name: name,
             barcode: barcode,
+            sku: sku,
             categoryId: categoryId,
             brandId: brandId,
             price: price,
             costPrice: costPrice,
+            mrp: mrp,
+            discountType: discountType,
+            discountValue: discountValue,
             stockQuantity: stockQuantity,
             lowStockAlert: lowStockAlert,
+            trackInventory: trackInventory,
+            reorderLevel: reorderLevel,
+            reorderQuantity: reorderQuantity,
+            warehouse: warehouse,
             unit: unit,
             hsnSac: hsnSac,
+            taxClass: taxClass,
             gstRate: gstRate,
             imageUrl: imageUrl,
-            expiryDate: expiryDate,
+            images: images,
+            description: description,
+            warrantyPeriod: warrantyPeriod,
+            expiryPeriod: expiryPeriod,
+            tags: tags,
+            status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -5955,17 +6719,31 @@ class $$ProductsTableTableManager extends RootTableManager<
             required String id,
             required String name,
             Value<String?> barcode = const Value.absent(),
+            Value<String?> sku = const Value.absent(),
             Value<String?> categoryId = const Value.absent(),
             Value<String?> brandId = const Value.absent(),
             required double price,
             Value<double?> costPrice = const Value.absent(),
+            Value<double?> mrp = const Value.absent(),
+            Value<String?> discountType = const Value.absent(),
+            Value<double> discountValue = const Value.absent(),
             Value<double> stockQuantity = const Value.absent(),
             Value<double> lowStockAlert = const Value.absent(),
+            Value<bool> trackInventory = const Value.absent(),
+            Value<double> reorderLevel = const Value.absent(),
+            Value<double> reorderQuantity = const Value.absent(),
+            Value<String?> warehouse = const Value.absent(),
             Value<String> unit = const Value.absent(),
             Value<String?> hsnSac = const Value.absent(),
+            Value<String?> taxClass = const Value.absent(),
             Value<double> gstRate = const Value.absent(),
             Value<String?> imageUrl = const Value.absent(),
-            Value<DateTime?> expiryDate = const Value.absent(),
+            Value<String?> images = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> warrantyPeriod = const Value.absent(),
+            Value<String?> expiryPeriod = const Value.absent(),
+            Value<String?> tags = const Value.absent(),
+            Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -5974,17 +6752,31 @@ class $$ProductsTableTableManager extends RootTableManager<
             id: id,
             name: name,
             barcode: barcode,
+            sku: sku,
             categoryId: categoryId,
             brandId: brandId,
             price: price,
             costPrice: costPrice,
+            mrp: mrp,
+            discountType: discountType,
+            discountValue: discountValue,
             stockQuantity: stockQuantity,
             lowStockAlert: lowStockAlert,
+            trackInventory: trackInventory,
+            reorderLevel: reorderLevel,
+            reorderQuantity: reorderQuantity,
+            warehouse: warehouse,
             unit: unit,
             hsnSac: hsnSac,
+            taxClass: taxClass,
             gstRate: gstRate,
             imageUrl: imageUrl,
-            expiryDate: expiryDate,
+            images: images,
+            description: description,
+            warrantyPeriod: warrantyPeriod,
+            expiryPeriod: expiryPeriod,
+            tags: tags,
+            status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,

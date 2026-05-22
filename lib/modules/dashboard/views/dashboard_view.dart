@@ -284,48 +284,54 @@ class _SalesChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GlassPanel(
       height: 340,
       borderRadius: BorderRadius.circular(28),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF172554), Color(0xFF1E3A8A), Color(0xFF111827)],
+      color: isDark
+          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          : Colors.white.withValues(alpha: 0.76),
+      border: Border.all(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.10)
+            : const Color(0xFFE2E8F0),
       ),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       child: Column(
         children: [
-          const Row(
+          Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: _SectionTitle(
                   title: 'Sales Overview',
-                  dark: true,
                 ),
               ),
-              _ChartFilter(label: 'This Month'),
-              SizedBox(width: 10),
-              _TinyIconButton(icon: Icons.more_horiz_rounded, dark: true),
+              _ChartFilter(label: 'This Month', light: !isDark),
+              const SizedBox(width: 10),
+              _TinyIconButton(icon: Icons.more_horiz_rounded, dark: isDark),
             ],
           ),
           const SizedBox(height: 12),
           const Row(
             children: [
               _LegendDot(
-                  color: Color(0xFF38BDF8), label: 'This Month', dark: true),
+                color: Color(0xFF38BDF8),
+                label: 'This Month',
+              ),
               SizedBox(width: 18),
               _LegendDot(
-                  color: Colors.white70,
-                  label: 'Last Month',
-                  dashed: true,
-                  dark: true),
+                color: Color(0xFF94A3B8),
+                label: 'Last Month',
+                dashed: true,
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Expanded(
             child: LineChart(
-              _salesChartData(),
+              _salesChartData(context),
               duration: const Duration(milliseconds: 900),
               curve: Curves.easeOutCubic,
             ),
@@ -336,7 +342,16 @@ class _SalesChartCard extends StatelessWidget {
   }
 }
 
-LineChartData _salesChartData() {
+LineChartData _salesChartData(BuildContext context) {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+  final mutedColor = isDark
+      ? AppTheme.darkMutedTextColor.withValues(alpha: 0.7)
+      : AppTheme.lightMutedTextColor.withValues(alpha: 0.7);
+  final gridColor = isDark
+      ? Colors.white.withValues(alpha: 0.08)
+      : const Color(0xFFE2E8F0);
+
   final thisMonth = <FlSpot>[
     const FlSpot(1, 9),
     const FlSpot(3, 14),
@@ -385,7 +400,7 @@ LineChartData _salesChartData() {
       drawVerticalLine: false,
       horizontalInterval: 10,
       getDrawingHorizontalLine: (value) => FlLine(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: gridColor,
         strokeWidth: 1,
       ),
     ),
@@ -401,7 +416,7 @@ LineChartData _salesChartData() {
           getTitlesWidget: (value, meta) => Text(
             value == 0 ? '0' : '${value.toInt()}K',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.70),
+              color: mutedColor,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -429,7 +444,7 @@ LineChartData _salesChartData() {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.72),
+                  color: mutedColor,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                 ),
@@ -442,15 +457,17 @@ LineChartData _salesChartData() {
     lineTouchData: LineTouchData(
       handleBuiltInTouches: true,
       touchTooltipData: LineTouchTooltipData(
-        tooltipBgColor: const Color(0xFF0F172A).withValues(alpha: 0.92),
+        tooltipBgColor: isDark
+            ? const Color(0xFF0F172A).withValues(alpha: 0.92)
+            : Colors.white.withValues(alpha: 0.95),
         tooltipRoundedRadius: 16,
         getTooltipItems: (items) {
           return items.map((item) {
             final series = item.barIndex == 0 ? 'This Month' : 'Last Month';
             return LineTooltipItem(
               '$series  \u20B9 ${(item.y * 1000).round()}',
-              const TextStyle(
-                color: Colors.white,
+              TextStyle(
+                color: isDark ? Colors.white : AppTheme.lightTextColor,
                 fontWeight: FontWeight.w800,
                 fontSize: 11,
               ),
@@ -474,7 +491,7 @@ LineChartData _salesChartData() {
               radius: shouldShow ? 5 : 0,
               color: const Color(0xFF60A5FA),
               strokeWidth: shouldShow ? 3 : 0,
-              strokeColor: Colors.white,
+              strokeColor: isDark ? Colors.white : Colors.white,
             );
           },
         ),
@@ -487,7 +504,7 @@ LineChartData _salesChartData() {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF3B82F6).withValues(alpha: 0.34),
+              const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.34 : 0.20),
               const Color(0xFF3B82F6).withValues(alpha: 0.02),
             ],
           ),
@@ -499,7 +516,9 @@ LineChartData _salesChartData() {
         curveSmoothness: 0.32,
         barWidth: 2,
         isStrokeCapRound: true,
-        color: Colors.white.withValues(alpha: 0.70),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.40)
+            : AppTheme.lightMutedTextColor.withValues(alpha: 0.40),
         dashArray: [5, 5],
         dotData: const FlDotData(show: false),
       ),
@@ -512,26 +531,31 @@ class _CategoryDonutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GlassPanel(
       height: 340,
       borderRadius: BorderRadius.circular(28),
       padding: const EdgeInsets.all(18),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF172554), Color(0xFF1E3A8A), Color(0xFF111827)],
+      color: isDark
+          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          : Colors.white.withValues(alpha: 0.76),
+      border: Border.all(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.10)
+            : const Color(0xFFE2E8F0),
       ),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       child: Column(
         children: [
           Row(
             children: [
               const Expanded(
-                child: _SectionTitle(title: 'Sales by Category', dark: true),
+                child: _SectionTitle(title: 'Sales by Category'),
               ),
-              const _ChartFilter(label: 'This Month'),
+              _ChartFilter(label: 'This Month', light: !isDark),
               const SizedBox(width: 10),
-              _TinyIconButton(icon: Icons.more_horiz_rounded, dark: true),
+              _TinyIconButton(icon: Icons.more_horiz_rounded, dark: isDark),
             ],
           ),
           const SizedBox(height: 14),
@@ -574,16 +598,18 @@ class _CategoryDonutCard extends StatelessWidget {
                           Text(
                             'Total',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.72),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.72)
+                                  : AppTheme.lightMutedTextColor,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 5),
-                          const Text(
+                          Text(
                             '\u20B9 1,24,560',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : AppTheme.lightTextColor,
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
                             ),
@@ -624,8 +650,8 @@ class _CategoryDonutCard extends StatelessWidget {
                                   item.label,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : AppTheme.lightTextColor,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -634,7 +660,9 @@ class _CategoryDonutCard extends StatelessWidget {
                               Text(
                                 '${item.percent.toInt()}%',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.82),
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.82)
+                                      : AppTheme.lightMutedTextColor,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w900,
                                 ),

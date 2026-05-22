@@ -9,8 +9,10 @@ import '../../modules/sales/views/sales_view.dart';
 import '../../modules/sales/bindings/sales_binding.dart';
 import '../../modules/inventory/views/inventory_view.dart';
 import '../../modules/inventory/bindings/inventory_binding.dart';
-import '../../modules/products_master/views/products_master_view.dart';
+import '../../modules/products_master/views/products_master_page.dart';
+import '../../modules/products_master/views/add_product_page.dart';
 import '../../modules/products_master/bindings/products_master_binding.dart';
+import '../../modules/products_master/bindings/add_product_binding.dart';
 import '../../modules/customers/views/customer_view.dart';
 import '../../modules/customers/bindings/customer_binding.dart';
 import '../../modules/suppliers/views/supplier_view.dart';
@@ -68,8 +70,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.PRODUCTS_MASTER,
-      page: () => const ProductsMasterView(),
+      page: () => const ProductsMasterPage(),
       binding: ProductsMasterBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.ADD_PRODUCT,
+      page: () => const AddProductPage(),
+      binding: AddProductBinding(),
     ),
     GetPage(
       name: AppRoutes.CUSTOMERS,

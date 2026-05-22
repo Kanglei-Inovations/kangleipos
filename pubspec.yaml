@@ -43,6 +43,11 @@ dependencies:
   lottie: ^3.3.3
   animations: ^2.2.0
   
+  # Image & File Handling
+  image_picker: ^1.0.7
+  file_picker: ^8.0.0
+  desktop_drop: ^0.4.4
+  
   # Utilities
   intl: ^0.20.2
   logger: ^2.0.2

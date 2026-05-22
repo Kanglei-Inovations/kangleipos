@@ -29,32 +29,57 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
 
     await windowManager.ensureInitialized();
-    const windowOptions = WindowOptions(
-      size: Size(1440, 900),
-      minimumSize: Size(1024, 720),
+
+    final width = prefService.windowWidth;
+    final height = prefService.windowHeight;
+
+    final windowOptions = WindowOptions(
+      size: Size(width, height),
+      minimumSize: const Size(1024, 720),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
-      title: 'PRINTONEX ERP',
+      title: 'Kanglei POS',
     );
+
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
     });
+
+    // Add listener to save window size changes
+    windowManager.addListener(_WindowSizeListener(prefService));
   }
 
   ResponsiveSizingConfig.instance.setCustomBreakpoints(
     const ScreenBreakpoints(desktop: 1024, tablet: 768, watch: 200),
   );
 
-  runApp(const PrintonexERP());
+  runApp(const KangleiPOS());
 }
 
-class PrintonexERP extends StatelessWidget {
+class _WindowSizeListener extends WindowListener {
+  final PreferenceService _prefService;
+  _WindowSizeListener(this._prefService);
+
+  @override
+  void onWindowResized() async {
+    final size = await windowManager.getSize();
+    await _prefService.setWindowWidth(size.width);
+    await _prefService.setWindowHeight(size.height);
+  }
+
+  @override
+  void onWindowMoved() async {
+    // Optional: save position too if needed
+  }
+}
+
+class KangleiPOS extends StatelessWidget {
   final Widget? home;
 
-  const PrintonexERP({super.key, this.home});
+  const KangleiPOS({super.key, this.home});
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +88,7 @@ class PrintonexERP extends StatelessWidget {
       child: Consumer<AppThemeController>(
         builder: (context, themeController, _) {
           return GetMaterialApp(
-            title: 'PRINTONEX ERP',
+            title: 'Kanglei POS',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

@@ -6,6 +6,7 @@ class AppRoutes {
   static const POS = '/pos';
   static const SALES = '/sales';
   static const INVENTORY = '/inventory';
+  static const ADD_PRODUCT = '/inventory/add';
   static const PRODUCTS_MASTER = '/products-master';
   static const STOCK_ADJUSTMENT = '/stock-adjustment';
   static const STOCK_TRANSFER = '/stock-transfer';

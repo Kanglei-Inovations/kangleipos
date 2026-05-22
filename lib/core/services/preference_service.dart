@@ -7,6 +7,9 @@ class PreferenceService {
   static const String _keyAuthUserId = 'auth_user_id';
   static const String _keyAuthUserName = 'auth_user_name';
   static const String _keyAuthUserRole = 'auth_user_role';
+  static const String _keyThemeMode = 'theme_mode';
+  static const String _keyWindowWidth = 'window_width';
+  static const String _keyWindowHeight = 'window_height';
 
   late SharedPreferences _prefs;
 
@@ -45,6 +48,15 @@ class PreferenceService {
     await _prefs.remove(_keyAuthUserRole);
     await _prefs.remove(_keyLastActivity);
   }
+
+  String get themeMode => _prefs.getString(_keyThemeMode) ?? 'light';
+  Future<void> setThemeMode(String mode) => _prefs.setString(_keyThemeMode, mode);
+
+  double get windowWidth => _prefs.getDouble(_keyWindowWidth) ?? 1920.0;
+  Future<void> setWindowWidth(double value) => _prefs.setDouble(_keyWindowWidth, value);
+
+  double get windowHeight => _prefs.getDouble(_keyWindowHeight) ?? 1080.0;
+  Future<void> setWindowHeight(double value) => _prefs.setDouble(_keyWindowHeight, value);
 
   // Helper to fix the typo I made in my head just now
   static const String _keyAuthAuthUserName = 'auth_user_name';

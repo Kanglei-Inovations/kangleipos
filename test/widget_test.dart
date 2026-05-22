@@ -5,7 +5,7 @@ import 'package:kangleipos/main.dart';
 void main() {
   testWidgets('App initialization test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const PrintonexERP(home: SizedBox.shrink()),
+      const KangleiPOS(home: SizedBox.shrink()),
     );
 
     expect(find.byType(MaterialApp), findsOneWidget);

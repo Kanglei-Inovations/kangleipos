@@ -21,27 +21,29 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = isMobile ? 280.0 : (isCollapsed ? 100.0 : 280.0);
+    final width = isMobile ? 280.0 : (isCollapsed ? 82.0 : 260.0);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    // Professional ERP Dark Navy color
+    const Color sidebarDarkBg = Color(0xFF0F172A);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOutCubic,
       width: width,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0B1120) : Colors.white,
+        color: sidebarDarkBg,
         border: Border(
           right: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.08),
+            color: Colors.white.withValues(alpha: 0.06),
+            width: 1,
           ),
         ),
       ),
       child: Column(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: _SidebarLogo(
@@ -49,15 +51,13 @@ class Sidebar extends StatelessWidget {
               onToggle: onToggle,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           Expanded(
             child: Theme(
               data: theme.copyWith(
                 scrollbarTheme: ScrollbarThemeData(
                   thumbColor: WidgetStateProperty.all(
-                    isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1),
+                    Colors.white.withValues(alpha: 0.1),
                   ),
                   thickness: WidgetStateProperty.all(4),
                   radius: const Radius.circular(10),
@@ -90,27 +90,25 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-          if (!(isCollapsed && !isMobile)) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Column(
-                children: [
+          // Fixed bottom section
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                if (!(isCollapsed && !isMobile)) ...[
                   const _SystemStatusCard(),
                   const SizedBox(height: 12),
                   const _UserCard(),
-                  const SizedBox(height: 20),
+                ] else ...[
+                  _buildCollapsedIndicator(
+                      context, Icons.wifi_rounded, Colors.greenAccent),
+                  const SizedBox(height: 12),
+                  _buildCollapsedIndicator(
+                      context, Icons.person_rounded, AppTheme.primaryColor),
                 ],
-              ),
+              ],
             ),
-          ] else ...[
-            const SizedBox(height: 16),
-            _buildCollapsedIndicator(
-                context, Icons.wifi_rounded, Colors.greenAccent),
-            const SizedBox(height: 12),
-            _buildCollapsedIndicator(
-                context, Icons.person_rounded, AppTheme.primaryColor),
-            const SizedBox(height: 20),
-          ],
+          ),
         ],
       ),
     );
@@ -148,9 +146,8 @@ class _MenuEntry extends _SidebarItem {
   final IconData icon;
   final String title;
   final String? route;
-  final List<_MenuEntry>? subItems;
 
-  const _MenuEntry(this.icon, this.title, this.route, {this.subItems});
+  const _MenuEntry(this.icon, this.title, this.route);
 }
 
 final List<_SidebarItem> _menuItems = [
@@ -158,28 +155,23 @@ final List<_SidebarItem> _menuItems = [
   const _MenuEntry(Icons.dashboard_rounded, 'Dashboard', AppRoutes.DASHBOARD),
   const _MenuEntry(Icons.point_of_sale_rounded, 'POS / Billing', AppRoutes.POS),
   const _MenuEntry(Icons.history_rounded, 'Sales', AppRoutes.SALES),
+  
   const _MenuHeader('INVENTORY'),
-  const _MenuEntry(Icons.shopping_bag_outlined, 'Products', null, subItems: [
-    _MenuEntry(Icons.list_rounded, 'All Products', AppRoutes.INVENTORY),
-    _MenuEntry(Icons.add_box_rounded, 'Add New Product', null),
-    _MenuEntry(Icons.grid_view_rounded, 'Product Overview', null),
-    _MenuEntry(Icons.storage_rounded, 'Master Data', AppRoutes.PRODUCTS_MASTER),
-    _MenuEntry(Icons.adjust_rounded, 'Stock Adjustment', AppRoutes.STOCK_ADJUSTMENT),
-    _MenuEntry(Icons.swap_horiz_rounded, 'Stock Transfer', AppRoutes.STOCK_TRANSFER),
-  ]),
+  const _MenuEntry(Icons.shopping_bag_outlined, 'Products', AppRoutes.PRODUCTS_MASTER),
+  const _MenuEntry(Icons.inventory_2_rounded, 'Inventory', AppRoutes.INVENTORY),
   const _MenuEntry(Icons.shopping_bag_rounded, 'Purchases', AppRoutes.PURCHASES),
   const _MenuEntry(Icons.diversity_3_rounded, 'Suppliers', AppRoutes.SUPPLIERS),
+  
   const _MenuHeader('FINANCE & CRM'),
-  const _MenuEntry(
-      Icons.account_balance_wallet_rounded, 'Expenses', AppRoutes.EXPENSES),
-  const _MenuEntry(Icons.verified_user_rounded, 'GST / Tax', AppRoutes.GST),
-  const _MenuEntry(Icons.analytics_rounded, 'Reports', AppRoutes.REPORTS),
+  const _MenuEntry(Icons.account_balance_wallet_rounded, 'Expenses', AppRoutes.EXPENSES),
   const _MenuEntry(Icons.groups_2_rounded, 'Customers', AppRoutes.CUSTOMERS),
+  const _MenuEntry(Icons.analytics_rounded, 'Reports', AppRoutes.REPORTS),
+  const _MenuEntry(Icons.verified_user_rounded, 'GST / Tax', AppRoutes.GST),
+  
   const _MenuHeader('SYSTEM'),
   const _MenuEntry(Icons.manage_accounts_rounded, 'Users', AppRoutes.USERS),
   const _MenuEntry(Icons.settings_rounded, 'Settings', AppRoutes.SETTINGS),
-  const _MenuEntry(
-      Icons.cloud_upload_rounded, 'Backup & Restore', AppRoutes.BACKUP),
+  const _MenuEntry(Icons.cloud_upload_rounded, 'Backup & Restore', AppRoutes.BACKUP),
   const _MenuEntry(Icons.sync_rounded, 'Sync Center', AppRoutes.SYNC),
 ];
 
@@ -191,14 +183,11 @@ class _SidebarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isCollapsed) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Divider(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             indent: 16,
             endIndent: 16),
       );
@@ -208,9 +197,7 @@ class _SidebarHeader extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.35)
-              : Colors.black.withValues(alpha: 0.4),
+          color: Colors.white.withValues(alpha: 0.35),
           fontSize: 11,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.8,
@@ -232,37 +219,24 @@ class _SidebarLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = Get.find<AppDatabase>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Row(
       children: [
-        _HoverLift(
-          lift: 2,
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF38BDF8),
-                  Color(0xFF6366F1),
-                  Color(0xFF9333EA)
-                ],
-              ),
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.5),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF38BDF8),
+                Color(0xFF6366F1),
               ],
             ),
-            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 26),
         ),
         if (!isCollapsed) ...[
           const SizedBox(width: 14),
@@ -281,22 +255,19 @@ class _SidebarLogo extends StatelessWidget {
                       businessName.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color:
-                            isDark ? Colors.white : theme.colorScheme.onSurface,
-                        fontSize: 16,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Enterprise ERP',
                       style: TextStyle(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.5)
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -305,18 +276,17 @@ class _SidebarLogo extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(width: 4),
           _TinyIconButton(
             icon: Icons.menu_open_rounded,
             onTap: onToggle,
-            dark: isDark,
+            dark: true,
           ),
         ] else if (onToggle != null) ...[
           const Spacer(),
           _TinyIconButton(
             icon: Icons.menu_rounded,
             onTap: onToggle,
-            dark: isDark,
+            dark: true,
           ),
         ],
       ],
@@ -341,242 +311,112 @@ class _SidebarMenuItem extends StatefulWidget {
 
 class _SidebarMenuItemState extends State<_SidebarMenuItem> {
   bool _hovering = false;
-  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final route = widget.entry.route;
     final isSelected = route != null && Get.currentRoute == route;
     final showLabel = !widget.isCollapsed;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasSubItems = widget.entry.subItems != null && widget.entry.subItems!.isNotEmpty;
-    
-    // Check if any sub-item is selected
-    final isAnySubSelected = hasSubItems && widget.entry.subItems!.any((s) => s.route != null && Get.currentRoute == s.route);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
-      child: AnimatedScale(
-        scale: _hovering ? 1.02 : 1,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: () {
-                  if (hasSubItems) {
-                    setState(() => _isExpanded = !_isExpanded);
-                    return;
-                  }
-                  if (widget.isMobile) Get.back();
-                  if (route == null) {
-                    Get.snackbar(
-                      widget.entry.title,
-                      '${widget.entry.title} module is coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor:
-                          AppTheme.primaryColor.withValues(alpha: 0.9),
-                      colorText: Colors.white,
-                    );
-                    return;
-                  }
-                  if (!isSelected) Get.offNamed(route);
-                },
-                child: Stack(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (widget.isMobile) Get.back();
+            if (route == null) {
+              Get.snackbar(
+                widget.entry.title,
+                '${widget.entry.title} module is coming soon',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.9),
+                colorText: Colors.white,
+              );
+              return;
+            }
+            if (!isSelected) Get.offNamed(route);
+          },
+          child: Stack(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 48,
+                padding: EdgeInsets.symmetric(horizontal: showLabel ? 16 : 0),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor.withValues(alpha: 0.12)
+                      : _hovering
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: showLabel
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOutCubic,
-                      height: 52,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: showLabel ? 16 : 0),
-                      decoration: BoxDecoration(
-                        gradient: (isSelected || isAnySubSelected)
-                            ? const LinearGradient(
-                                colors: [Color(0xFF4F46E5), Color(0xFF9333EA)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        color: (isSelected || isAnySubSelected)
-                            ? null
-                            : _hovering
-                                ? (isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : Colors.black.withValues(alpha: 0.05))
-                                : Colors.transparent,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: (isSelected || isAnySubSelected)
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : (isDark
-                                  ? Colors.white
-                                      .withValues(alpha: _hovering ? 0.05 : 0.0)
-                                  : Colors.black.withValues(
-                                      alpha: _hovering ? 0.05 : 0.0)),
-                        ),
-                        boxShadow: (isSelected || isAnySubSelected)
-                            ? [
-                                const BoxShadow(
-                                  color: Color(0x666366F1),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 8),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: showLabel
-                            ? MainAxisAlignment.start
-                            : MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            widget.entry.icon,
-                            size: 22,
-                            color: (isSelected || isAnySubSelected)
-                                ? Colors.white
-                                : (isDark
-                                    ? Colors.white.withValues(alpha: 0.6)
-                                    : Colors.black.withValues(alpha: 0.6)),
-                          ),
-                          if (showLabel) ...[
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                widget.entry.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: (isSelected || isAnySubSelected)
-                                      ? Colors.white
-                                      : (isDark
-                                          ? Colors.white.withValues(alpha: 0.7)
-                                          : Colors.black.withValues(alpha: 0.7)),
-                                  fontSize: 14,
-                                  fontWeight: (isSelected || isAnySubSelected)
-                                      ? FontWeight.w900
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            if (hasSubItems)
-                               Icon(
-                                _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                                size: 18,
-                                color: (isSelected || isAnySubSelected) ? Colors.white70 : Colors.grey,
-                              )
-                            else if (isSelected)
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: Colors.white,
-                              ).animate().fadeIn(duration: 400.ms).slideX(
-                                  begin: -0.5, end: 0)
-                            else
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.2)
-                                    : Colors.black.withValues(alpha: 0.2),
-                              ),
-                          ],
-                        ],
-                      ),
+                    Icon(
+                      widget.entry.icon,
+                      size: 20,
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : Colors.white.withValues(alpha: 0.55),
                     ),
-                    if (isSelected || isAnySubSelected)
-                      Positioned(
-                        left: 0,
-                        top: 15,
-                        bottom: 15,
-                        child: Container(
-                          width: 4,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8),
-                            borderRadius: const BorderRadius.horizontal(
-                                right: Radius.circular(4)),
-                            boxShadow: [
-                              const BoxShadow(
-                                color: Color(0xCC38BDF8),
-                                blurRadius: 8,
-                              ),
-                            ],
+                    if (showLabel) ...[
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          widget.entry.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.65),
+                            fontSize: 13.5,
+                            fontWeight: isSelected
+                                ? FontWeight.w900
+                                : FontWeight.w600,
                           ),
                         ),
-                      ).animate().scaleY(
-                          begin: 0,
-                          end: 1,
-                          duration: 300.ms,
-                          curve: Curves.elasticOut),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: AppTheme.primaryColor,
+                        ).animate().fadeIn(duration: 300.ms).slideX(
+                            begin: -0.5, end: 0)
+                    ],
                   ],
                 ),
               ),
-            ),
-            if (hasSubItems && _isExpanded && !widget.isCollapsed)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Column(
-                  children: widget.entry.subItems!.map((sub) {
-                    final isSubSelected = sub.route != null && Get.currentRoute == sub.route;
-                    return _SidebarSubMenuItem(entry: sub, isSelected: isSubSelected, isMobile: widget.isMobile);
-                  }).toList(),
-                ),
-              ).animate().fadeIn(duration: 200.ms),
-          ],
+              if (isSelected)
+                Positioned(
+                  left: 0,
+                  top: 12,
+                  bottom: 12,
+                  child: Container(
+                    width: 3.5,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(4)),
+                    ),
+                  ),
+                ).animate().scaleY(
+                    begin: 0,
+                    end: 1,
+                    duration: 250.ms,
+                    curve: Curves.easeOutCubic),
+            ],
+          ),
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms).slideX(
-        begin: -0.1, end: 0, curve: Curves.easeOutCubic);
-  }
-}
-
-class _SidebarSubMenuItem extends StatelessWidget {
-  final _MenuEntry entry;
-  final bool isSelected;
-  final bool isMobile;
-
-  const _SidebarSubMenuItem({required this.entry, required this.isSelected, required this.isMobile});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: () {
-        if (isMobile) Get.back();
-        if (entry.route != null) Get.offNamed(entry.route!);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? theme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(entry.icon, size: 16, color: isSelected ? theme.primaryColor : (isDark ? Colors.white60 : Colors.black54)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                entry.title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? theme.primaryColor : (isDark ? Colors.white70 : Colors.black87),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    ).animate().fadeIn(duration: 300.ms);
   }
 }
 
@@ -585,29 +425,23 @@ class _SystemStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.05)),
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.greenAccent.withValues(alpha: isDark ? 0.1 : 0.2),
+              color: Colors.greenAccent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.wifi_rounded,
-                color: Colors.greenAccent, size: 18),
+                color: Colors.greenAccent, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -617,20 +451,18 @@ class _SystemStatusCard extends StatelessWidget {
                 Text(
                   'SYSTEM ONLINE',
                   style: TextStyle(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.5)
-                        : Colors.black.withValues(alpha: 0.5),
-                    fontSize: 9,
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 8.5,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
+                    letterSpacing: 0.8,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  'LAN Connected',
+                const Text(
+                  'Connected',
                   style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontSize: 12,
+                    color: Colors.white,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -638,14 +470,11 @@ class _SystemStatusCard extends StatelessWidget {
             ),
           ),
           Container(
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             decoration: const BoxDecoration(
               color: Colors.greenAccent,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: Colors.greenAccent, blurRadius: 8),
-              ],
             ),
           ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 800.ms),
         ],
@@ -659,62 +488,47 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.05)),
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF60A5FA), Color(0xFF6366F1)],
               ),
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(12),
             ),
             child:
-                const Icon(Icons.person_rounded, color: Colors.white, size: 24),
+                const Icon(Icons.person_rounded, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Super Admin',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                 ),
-                SizedBox(height: 2),
                 Text(
                   'Online Now',
                   style: TextStyle(
-                    color: isDark ? Colors.white60 : Colors.black54,
-                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -728,7 +542,7 @@ class _UserCard extends StatelessWidget {
                 Get.find<AuthController>().logout();
               }
             },
-            dark: isDark,
+            dark: true,
           ),
         ],
       ),
@@ -751,21 +565,18 @@ class _TinyIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 34,
-        height: 34,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color:
-              dark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: dark
-                ? Colors.white.withValues(alpha: 0.14)
-                : Colors.black.withValues(alpha: 0.1),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
         ),
-        child: Icon(icon, color: dark ? Colors.white70 : Colors.black87, size: 18),
+        child: const Icon(icon, color: Colors.white70, size: 17),
       ),
     );
   }

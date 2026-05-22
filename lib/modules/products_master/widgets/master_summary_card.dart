@@ -6,6 +6,7 @@ class MasterSummaryCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String? growth;
+  final bool isPositive;
 
   const MasterSummaryCard({
     super.key,
@@ -14,12 +15,13 @@ class MasterSummaryCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.growth,
+    this.isPositive = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -45,6 +47,7 @@ class MasterSummaryCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   title,
@@ -62,14 +65,15 @@ class MasterSummaryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
                     if (growth != null) ...[
                       const SizedBox(width: 8),
                       Text(
                         growth!,
-                        style: const TextStyle(
-                          color: Colors.green,
+                        style: TextStyle(
+                          color: isPositive ? Colors.green : Colors.red,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),

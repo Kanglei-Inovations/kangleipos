@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 
 class MasterFilterBar extends StatelessWidget {
   final Function(String) onSearch;
-  final String? selectedCategory;
-  final String? selectedBrand;
 
   const MasterFilterBar({
     super.key,
     required this.onSearch,
-    this.selectedCategory,
-    this.selectedBrand,
   });
 
   @override
@@ -36,11 +32,13 @@ class MasterFilterBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          _buildFilterDropdown('Category', ['All Categories', 'Electronics', 'Grocery']),
+          _buildFilterDropdown('Category', ['All Categories']),
           const SizedBox(width: 12),
-          _buildFilterDropdown('Brand', ['All Brands', 'Samsung', 'Apple']),
+          _buildFilterDropdown('Brand', ['All Brands']),
           const SizedBox(width: 12),
-          _buildFilterDropdown('Status', ['All Status', 'Active', 'Inactive']),
+          _buildFilterDropdown('Unit', ['All Units']),
+          const SizedBox(width: 12),
+          _buildFilterDropdown('Status', ['All Status']),
           const SizedBox(width: 12),
           IconButton(
             onPressed: () {},
