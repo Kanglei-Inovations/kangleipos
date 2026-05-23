@@ -91,9 +91,11 @@ class _MainLayoutState extends State<MainLayout> {
                       child: KeyedSubtree(
                         key: ValueKey(widget.title),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 20,
+                          padding: const EdgeInsets.only(
+                            left: 24,
+                            right: 24,
+                            top: 8,
+                            bottom: 20,
                           ),
                           child: widget.child,
                         ),

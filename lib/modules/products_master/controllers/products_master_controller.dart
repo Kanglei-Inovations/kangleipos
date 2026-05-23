@@ -21,6 +21,10 @@ class ProductsMasterController extends GetxController with GetSingleTickerProvid
   final RxInt brandsCount = 0.obs;
   final RxInt unitsCount = 18.obs; 
 
+  // Pagination
+  final RxInt currentPage = 1.obs;
+  final RxInt rowsPerPage = 10.obs;
+
   // Dummy data for demo if DB is empty
   final List<Map<String, String>> dummyUnits = [
     {'name': 'Pieces', 'abbr': 'pcs', 'type': 'Base Unit', 'status': 'Active'},
@@ -62,6 +66,28 @@ class ProductsMasterController extends GetxController with GetSingleTickerProvid
     if (searchQuery.isEmpty) return products;
     final q = searchQuery.value.toLowerCase();
     return products.where((p) => p.name.toLowerCase().contains(q) || (p.barcode?.contains(q) ?? false)).toList();
+  }
+
+  List<Product> get paginatedProducts {
+    final filtered = filteredProducts;
+    final start = (currentPage.value - 1) * rowsPerPage.value;
+    if (start >= filtered.length) return [];
+    final end = start + rowsPerPage.value;
+    return filtered.sublist(start, end > filtered.length ? filtered.length : end);
+  }
+
+  int get totalPages {
+    final count = filteredProducts.length;
+    if (count <= 0) return 1;
+    return (count / rowsPerPage.value).ceil();
+  }
+
+  void nextPage() {
+    if (currentPage.value < totalPages) currentPage.value++;
+  }
+
+  void previousPage() {
+    if (currentPage.value > 1) currentPage.value--;
   }
   
   List<Category> get filteredCategories {

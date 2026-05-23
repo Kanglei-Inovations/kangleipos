@@ -29,17 +29,16 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
           final width = constraints.maxWidth;
           final isDesktop = width >= 1280;
 
-          return Column(
-            children: [
-              _buildHeaderActions(context),
-              const SizedBox(height: 24),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+          return Container(
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+            child: Column(
+              children: [
+                _buildHeaderActions(context),
+                const SizedBox(height: 12),
+                Expanded(
                   child: Obx(() {
                     if (controller.isLoading.value) {
-                      return const SizedBox(
-                          height: 400, child: Center(child: CircularProgressIndicator()));
+                      return const Center(child: CircularProgressIndicator());
                     }
 
                     // Only Products tab gets the new full layout
@@ -51,8 +50,8 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
                     return _buildOtherTabsUI(context, width);
                   }),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -64,32 +63,37 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildKpiGrid(context, width),
-        const SizedBox(height: 5),
-        if (isDesktop)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 7,
-                child: _buildMainTableSection(context),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 340,
-                child: _buildRightSidebar(context),
-              ),
-            ],
-          )
-        else
-          Column(
-            children: [
-              _buildMainTableSection(context),
-              const SizedBox(height: 10),
-              _buildRightSidebar(context),
-            ],
-          ),
-        const SizedBox(height: 32),
-        const MasterInfoBanner(),
+        const SizedBox(height: 12),
+        Expanded(
+          child: isDesktop
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 7,
+                      child: _buildMainTableSection(context),
+                    ),
+                    const SizedBox(width: 20),
+                    SizedBox(
+                      width: 340,
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: _buildRightSidebar(context),
+                      ),
+                    ),
+                  ],
+                )
+              : SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _buildMainTableSection(context),
+                      const SizedBox(height: 20),
+                      _buildRightSidebar(context),
+                    ],
+                  ),
+                ),
+        ),
       ],
     );
   }
@@ -98,10 +102,12 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
     return Column(
       children: [
         MasterFilterBar(onSearch: controller.updateSearch),
-        const SizedBox(height: 10),
-        _PanelCard(
-          title: _getTabTitle(),
-          child: _buildTabContent(),
+        const SizedBox(height: 12),
+        Expanded(
+          child: _PanelCard(
+            title: _getTabTitle(),
+            child: Expanded(child: _buildTabContent()),
+          ),
         ),
       ],
     );
@@ -193,13 +199,8 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
     return Column(
       children: [
         MasterFilterBar(onSearch: controller.updateSearch),
-        const SizedBox(height: 5),
-        ProductsTable(products: controller.filteredProducts)
-        // _PanelCard(
-        //   title: 'Product Catalog',
-        //   actionLabel: 'View Detailed Report',
-        //   child: ProductsTable(products: controller.filteredProducts),
-        // ),
+        const SizedBox(height: 8),
+        const Expanded(child: ProductsTable(products: [])),
       ],
     );
   }
