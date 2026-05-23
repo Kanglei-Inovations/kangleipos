@@ -236,6 +236,7 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
   }
 
   Widget _buildTabs() {
+    final theme = Theme.of(Get.context!);
     final List<String> tabs = ['Products', 'Categories', 'Brands', 'Units'];
     return Obx(() => Row(
       children: List.generate(tabs.length, (index) {
@@ -252,7 +253,7 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
-                    color: isSelected ? AppTheme.primaryColor : Colors.grey.withValues(alpha: 0.7),
+                    color: isSelected ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color?.withOpacity(0.7),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -262,11 +263,11 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
                   height: 3,
                   width: isSelected ? 24 : 0,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: isSelected ? [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
                         blurRadius: 8,
                       )
                     ] : null,
@@ -281,29 +282,29 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
   }
 
   Widget _actionButton(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+            color: theme.dividerColor,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+            Icon(icon, size: 16, color: theme.textTheme.bodySmall?.color),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                color: theme.textTheme.bodyLarge?.color,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -314,12 +315,13 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
   }
 
   Widget _addNewButton(BuildContext context) {
+    final theme = Theme.of(context);
     return ElevatedButton.icon(
       onPressed: () => Get.dialog(const MasterAddNewModal(), barrierDismissible: true),
       icon: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
       label: const Text('Add New', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.colorScheme.primary,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 0,
@@ -374,10 +376,10 @@ class _KpiCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(16),
       color: isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          ? theme.cardColor.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.8),
       border: Border.all(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        color: theme.dividerColor,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,16 +481,17 @@ class _PanelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GlassPanel(
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(18),
       color: isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          ? theme.cardColor.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.82),
       border: Border.all(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        color: theme.dividerColor,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -536,10 +539,10 @@ class _CategoryDonutCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(18),
       color: isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          ? theme.cardColor.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.8),
       border: Border.all(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        color: theme.dividerColor,
       ),
       child: Column(
         children: [
@@ -626,10 +629,10 @@ class _TopSellingProductsCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(18),
       color: isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          ? theme.cardColor.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.8),
       border: Border.all(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        color: theme.dividerColor,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,16 +687,17 @@ class _StockAlertsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GlassPanel(
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(18),
       color: isDark
-          ? const Color(0xFF1E293B).withValues(alpha: 0.62)
+          ? theme.cardColor.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.8),
       border: Border.all(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        color: theme.dividerColor,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +741,8 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -769,7 +774,7 @@ class _AlertTile extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey),
+          Icon(Icons.arrow_forward_ios_rounded, size: 12, color: theme.textTheme.bodySmall?.color?.withOpacity(0.4)),
         ],
       ),
     );
@@ -784,7 +789,8 @@ class _ChartFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final color = light ? (isDark ? Colors.white : Colors.black) : Colors.white;
 
     return Container(
@@ -793,7 +799,7 @@ class _ChartFilter extends StatelessWidget {
         color: light ? Colors.transparent : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+          color: theme.dividerColor,
         ),
       ),
       child: Row(
@@ -816,13 +822,14 @@ class _TinyIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(color: theme.dividerColor),
       ),
-      child: Icon(icon, size: 16, color: dark ? Colors.white70 : Colors.black54),
+      child: Icon(icon, size: 16, color: dark ? Colors.white70 : theme.textTheme.bodySmall?.color),
     );
   }
 }

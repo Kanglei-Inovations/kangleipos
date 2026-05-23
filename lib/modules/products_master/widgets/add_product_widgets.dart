@@ -11,29 +11,31 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
+        boxShadow: !isDark ? [
           BoxShadow(
             color: const Color(0xFF64748B).withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
-        ],
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        ] : [],
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF0F172A),
+              color: theme.textTheme.bodyLarge?.color,
               letterSpacing: -0.5,
             ),
           ),
@@ -56,12 +58,13 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
         key: controller.formKey,
         child: Column(
           children: [
-            _buildTextField(controller.nameController, 'Product Name', 'Enter full product name', isRequired: true),
+            _buildTextField(context, controller.nameController, 'Product Name', 'Enter full product name', isRequired: true),
             const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: _buildTextField(
+                    context,
                     controller.skuController, 
                     'SKU / Product Code', 
                     'e.g. SKU123', 
@@ -76,6 +79,7 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildTextField(
+                    context,
                     controller.barcodeController, 
                     'Barcode', 
                     'Scan or enter barcode',
@@ -104,6 +108,7 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
                         .firstWhereOrNull((c) => c.id == controller.selectedCategoryId.value)
                         ?.name;
                     return _buildDropdown(
+                      context,
                       'Category',
                       items,
                       (v) {
@@ -122,6 +127,7 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
                         .firstWhereOrNull((b) => b.id == controller.selectedBrandId.value)
                         ?.name;
                     return _buildDropdown(
+                      context,
                       'Brand',
                       items,
                       (v) {
@@ -139,6 +145,7 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
               children: [
                 Expanded(
                   child: Obx(() => _buildDropdown(
+                        context,
                         'Unit',
                         ['pcs', 'kg', 'box', 'ltr', 'm'],
                         (v) => controller.selectedUnit.value = v!,
@@ -148,6 +155,7 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Obx(() => _buildDropdown(
+                        context,
                         'Tax Class',
                         ['GST 0%', 'GST 5%', 'GST 12%', 'GST 18%', 'GST 28%'],
                         (v) => controller.selectedTaxClass.value = v!,
@@ -157,9 +165,9 @@ class ProductBasicInfoCard extends GetView<AddProductController> {
               ],
             ),
             const SizedBox(height: 20),
-            _buildTextField(controller.hsnController, 'HSN / SAC Code', 'e.g. 8471'),
+            _buildTextField(context, controller.hsnController, 'HSN / SAC Code', 'e.g. 8471'),
             const SizedBox(height: 20),
-            _buildTextField(controller.descriptionController, 'Description', 'Product details...', maxLines: 3),
+            _buildTextField(context, controller.descriptionController, 'Description', 'Product details...', maxLines: 3),
           ],
         ),
       ),
@@ -172,6 +180,7 @@ class ProductImageUploadCard extends GetView<AddProductController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return _SectionCard(
       title: 'Product Images',
       child: Column(
@@ -188,17 +197,17 @@ class ProductImageUploadCard extends GetView<AddProductController> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: theme.dividerColor.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+                  border: Border.all(color: theme.dividerColor, style: BorderStyle.solid),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue),
+                    Icon(Icons.cloud_upload_outlined, size: 48, color: theme.colorScheme.primary),
                     const SizedBox(height: 12),
-                    const Text('Drag & drop images or click to upload', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                    Text('Drag & drop images or click to upload', style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyMedium?.color)),
                     const SizedBox(height: 4),
-                    Text('Supported: JPG, PNG, WebP (Max 5 images)', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    Text('Supported: JPG, PNG, WebP (Max 5 images)', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color)),
                   ],
                 ),
               ),
@@ -243,14 +252,15 @@ class ProductPricingCard extends GetView<AddProductController> {
       title: 'Pricing Information',
       child: Column(
         children: [
-          _buildTextField(controller.mrpController, 'MRP', '0.00', prefixText: '₹', isNumber: true),
+          _buildTextField(context, controller.mrpController, 'MRP', '0.00', prefixText: '₹', isNumber: true),
           const SizedBox(height: 20),
-          _buildTextField(controller.costPriceController, 'Cost Price', '0.00', prefixText: '₹', isNumber: true),
+          _buildTextField(context, controller.costPriceController, 'Cost Price', '0.00', prefixText: '₹', isNumber: true),
           const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: Obx(() => _buildDropdown(
+                      context,
                       'Discount Type',
                       ['Percentage', 'Flat'],
                       (v) => controller.selectedDiscountType.value = v!,
@@ -258,23 +268,24 @@ class ProductPricingCard extends GetView<AddProductController> {
                     )),
               ),
               const SizedBox(width: 16),
-              Expanded(child: _buildTextField(controller.discountValueController, 'Value', '0.00', isNumber: true)),
+              Expanded(child: _buildTextField(context, controller.discountValueController, 'Value', '0.00', isNumber: true)),
             ],
           ),
           const SizedBox(height: 20),
-          _buildTextField(controller.sellingPriceController, 'Selling Price', '0.00', prefixText: '₹', isNumber: true),
+          _buildTextField(context, controller.sellingPriceController, 'Selling Price', '0.00', prefixText: '₹', isNumber: true),
           const SizedBox(height: 24),
-          _buildMarginIndicator(),
+          _buildMarginIndicator(context),
         ],
       ),
     );
   }
 
-  Widget _buildMarginIndicator() {
+  Widget _buildMarginIndicator(BuildContext context) {
+    final theme = Theme.of(context);
     return Obx(() => Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: theme.dividerColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -283,8 +294,8 @@ class ProductPricingCard extends GetView<AddProductController> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Profit Margin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-              Text('₹${controller.profitMargin.value.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              Text('Profit Margin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textTheme.bodySmall?.color)),
+              Text('₹${controller.profitMargin.value.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: theme.textTheme.bodyLarge?.color)),
             ],
           ),
           Container(
@@ -322,17 +333,17 @@ class ProductInventoryCard extends GetView<AddProductController> {
           const Divider(height: 32),
           Row(
             children: [
-              Expanded(child: _buildTextField(controller.openingStockController, 'Opening Stock', '0', isNumber: true)),
+              Expanded(child: _buildTextField(context, controller.openingStockController, 'Opening Stock', '0', isNumber: true)),
               const SizedBox(width: 16),
-              Expanded(child: _buildDropdown('Warehouse', ['Main Warehouse', 'Store A', 'Warehouse B'], (v) => controller.selectedWarehouse.value = v!)),
+              Expanded(child: _buildDropdown(context, 'Warehouse', ['Main Warehouse', 'Store A', 'Warehouse B'], (v) => controller.selectedWarehouse.value = v!)),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _buildTextField(controller.reorderLevelController, 'Reorder Level', '5', isNumber: true)),
+              Expanded(child: _buildTextField(context, controller.reorderLevelController, 'Reorder Level', '5', isNumber: true)),
               const SizedBox(width: 16),
-              Expanded(child: _buildTextField(controller.reorderQuantityController, 'Reorder Qty', '10', isNumber: true)),
+              Expanded(child: _buildTextField(context, controller.reorderQuantityController, 'Reorder Qty', '10', isNumber: true)),
             ],
           ),
           const SizedBox(height: 12),
@@ -360,15 +371,15 @@ class ProductAdditionalInfoCard extends GetView<AddProductController> {
         children: [
           Row(
             children: [
-              Expanded(child: _buildTextField(controller.warrantyController, 'Warranty Period', 'e.g. 1 Year')),
+              Expanded(child: _buildTextField(context, controller.warrantyController, 'Warranty Period', 'e.g. 1 Year')),
               const SizedBox(width: 16),
-              Expanded(child: _buildTextField(controller.expiryController, 'Expiry Period', 'e.g. 6 Months')),
+              Expanded(child: _buildTextField(context, controller.expiryController, 'Expiry Period', 'e.g. 6 Months')),
             ],
           ),
           const SizedBox(height: 20),
-          _buildDropdown('Product Status', ['Active', 'Inactive', 'Draft'], (v) => controller.selectedStatus.value = v!),
+          _buildDropdown(context, 'Product Status', ['Active', 'Inactive', 'Draft'], (v) => controller.selectedStatus.value = v!),
           const SizedBox(height: 20),
-          _buildTextField(controller.tagsController, 'Tags', 'comma separated tags...'),
+          _buildTextField(context, controller.tagsController, 'Tags', 'comma separated tags...'),
         ],
       ),
     );
@@ -376,14 +387,15 @@ class ProductAdditionalInfoCard extends GetView<AddProductController> {
 }
 
 // Common Widget Helpers
-Widget _buildTextField(TextEditingController ctrl, String label, String hint, {bool isRequired = false, bool isNumber = false, int maxLines = 1, Widget? suffix, String? prefixText}) {
+Widget _buildTextField(BuildContext context, TextEditingController ctrl, String label, String hint, {bool isRequired = false, bool isNumber = false, int maxLines = 1, Widget? suffix, String? prefixText}) {
+  final theme = Theme.of(context);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       RichText(
         text: TextSpan(
           text: label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569)),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
           children: [
             if (isRequired) const TextSpan(text: ' *', style: TextStyle(color: Colors.red)),
           ],
@@ -397,15 +409,15 @@ Widget _buildTextField(TextEditingController ctrl, String label, String hint, {b
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal),
+          hintStyle: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.5), fontWeight: FontWeight.normal),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: theme.cardColor,
           prefixText: prefixText,
           suffixIcon: suffix,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.blue, width: 2)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.dividerColor)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.dividerColor)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: theme.colorScheme.primary, width: 2)),
         ),
         validator: isRequired ? (v) => v!.isEmpty ? 'This field is required' : null : null,
       ),
@@ -413,16 +425,17 @@ Widget _buildTextField(TextEditingController ctrl, String label, String hint, {b
   );
 }
 
-Widget _buildDropdown(String label, List<String> items, Function(String?) onChanged, {String? value}) {
+Widget _buildDropdown(BuildContext context, String label, List<String> items, Function(String?) onChanged, {String? value}) {
+  final theme = Theme.of(context);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 13,
-          color: Color(0xFF475569),
+          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
         ),
       ),
       const SizedBox(height: 8),
@@ -436,40 +449,39 @@ Widget _buildDropdown(String label, List<String> items, Function(String?) onChan
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
                     ),
                   ),
                 ))
             .toList(),
         onChanged: onChanged,
-        dropdownColor: Colors.white,
+        dropdownColor: theme.cardColor,
         elevation: 8,
         borderRadius: BorderRadius.circular(16),
-        icon: const Icon(
+        icon: Icon(
           Icons.keyboard_arrow_down_rounded,
-          color: Color(0xFF64748B),
+          color: theme.textTheme.bodySmall?.color,
           size: 20,
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
+          color: theme.textTheme.bodyLarge?.color,
         ),
         decoration: InputDecoration(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: theme.cardColor,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderSide: BorderSide(color: theme.dividerColor),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderSide: BorderSide(color: theme.dividerColor),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.blue, width: 2),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
         ),
       ),

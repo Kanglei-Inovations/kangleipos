@@ -8,20 +8,22 @@ class BrandsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        border: Border.all(color: theme.dividerColor),
+        boxShadow: theme.brightness == Brightness.light ? const [
           BoxShadow(color: Colors.black12, blurRadius: 18, offset: Offset(0, 8)),
-        ],
+        ] : [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Text('Brands', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Text('Brands', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -30,7 +32,7 @@ class BrandsTable extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF9FAFB)),
+                  headingRowColor: WidgetStateProperty.all(theme.dividerColor.withOpacity(0.05)),
                   columns: const [
                     DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                     DataColumn(label: Text('Brand Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
@@ -68,7 +70,7 @@ class BrandsTable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

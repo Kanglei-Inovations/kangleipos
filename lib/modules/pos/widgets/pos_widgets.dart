@@ -9,12 +9,6 @@ import '../../../database/database.dart';
 import '../controllers/pos_controller.dart';
 import '../models/cart_item.dart';
 
-// --- DESIGN SYSTEM CONSTANTS (Matching Reference) ---
-const Color posBgColor = Color(0xFFF8F9FA);
-const Color posSurfaceColor = Colors.white;
-const Color posBorderColor = Color(0xFFE2E8F0);
-const Color posPrimaryBlue = Colors.blue;
-
 // --- PRODUCT CARD (MATCHING REFERENCE) ---
 class PosProductCard extends StatefulWidget {
   final Product product;
@@ -31,6 +25,7 @@ class _PosProductCardState extends State<PosProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final bool isOutOfStock = (widget.product.stockQuantity) <= 0;
 
     return MouseRegion(
@@ -42,9 +37,9 @@ class _PosProductCardState extends State<PosProductCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _isHovered ? posPrimaryBlue : Colors.grey.shade200),
+            border: Border.all(color: _isHovered ? theme.colorScheme.primary : theme.dividerColor),
           ),
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -58,29 +53,29 @@ class _PosProductCardState extends State<PosProductCard> {
                           child: Image.network(
                             widget.product.imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(Icons.image, size: 50, color: Colors.grey.shade300),
+                            errorBuilder: (_, __, ___) => Icon(Icons.image, size: 50, color: theme.dividerColor),
                           ),
                         )
-                      : Icon(Icons.image, size: 50, color: Colors.grey.shade300),
+                      : Icon(Icons.image, size: 50, color: theme.dividerColor),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 widget.product.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 widget.product.description ?? "Standard Variant",
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
               Text(
                 "₹ ${NumberFormat('#,##,###.00').format(widget.product.price)}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               const SizedBox(height: 8),
               Row(
@@ -92,13 +87,13 @@ class _PosProductCardState extends State<PosProductCard> {
                       const SizedBox(width: 4),
                       Text(
                         isOutOfStock ? "Out of Stock" : "In Stock",
-                        style: TextStyle(fontSize: 11, color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700),
+                        style: TextStyle(fontSize: 11, color: isOutOfStock ? Colors.red : Colors.green),
                       ),
                     ],
                   ),
                   Text(
                     "${widget.product.stockQuantity.toInt()}",
-                    style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ],
               )
@@ -127,6 +122,7 @@ class CartItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -135,7 +131,7 @@ class CartItemTile extends StatelessWidget {
             width: 30,
             child: Text(
               "$index",
-              style: const TextStyle(color: Colors.black87, fontSize: 12),
+              style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.8), fontSize: 12),
             ),
           ),
           Expanded(
@@ -146,7 +142,7 @@ class CartItemTile extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: theme.dividerColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: item.product.imageUrl != null && item.product.imageUrl!.isNotEmpty
@@ -154,7 +150,7 @@ class CartItemTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                           child: Image.network(item.product.imageUrl!, fit: BoxFit.cover),
                         )
-                      : const Icon(Icons.smartphone, size: 20, color: Colors.grey),
+                      : Icon(Icons.smartphone, size: 20, color: theme.dividerColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -168,7 +164,7 @@ class CartItemTile extends StatelessWidget {
                       ),
                       Text(
                         item.product.description ?? "Standard Variant",
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -186,7 +182,7 @@ class CartItemTile extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                _qtyBtn(Icons.remove, () => onUpdateQuantity(-1)),
+                _qtyBtn(context, Icons.remove, () => onUpdateQuantity(-1)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
@@ -194,7 +190,7 @@ class CartItemTile extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
-                _qtyBtn(Icons.add, () => onUpdateQuantity(1)),
+                _qtyBtn(context, Icons.add, () => onUpdateQuantity(1)),
               ],
             ),
           ),
@@ -208,7 +204,7 @@ class CartItemTile extends StatelessWidget {
           SizedBox(
             width: 35,
             child: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error, size: 20),
               onPressed: onDelete,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -219,13 +215,14 @@ class CartItemTile extends StatelessWidget {
     );
   }
 
-  Widget _qtyBtn(IconData icon, VoidCallback onTap) {
+  Widget _qtyBtn(BuildContext context, IconData icon, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Icon(icon, size: 14),
@@ -253,18 +250,19 @@ class BillSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(label, style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 13)),
           Text(
             value,
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
-              color: isDiscount ? Colors.green : Colors.black87,
+              color: isDiscount ? Colors.green : theme.textTheme.bodyMedium?.color,
             ),
           ),
         ],
@@ -288,20 +286,21 @@ class CustomerSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: theme.dividerColor.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: theme.dividerColor),
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.blue.shade100,
-              child: Icon(Icons.person, color: Colors.blue.shade700),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              child: Icon(Icons.person, color: theme.colorScheme.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -314,7 +313,7 @@ class CustomerSelector extends StatelessWidget {
                   ),
                   Text(
                     selectedCustomer?.phone ?? 'Default',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12),
                   ),
                 ],
               ),
@@ -326,7 +325,7 @@ class CustomerSelector extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: theme.dividerColor),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Icon(Icons.add, size: 20),
@@ -354,6 +353,7 @@ class PosSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -365,15 +365,15 @@ class PosSearchBar extends StatelessWidget {
               prefixIcon: const Icon(Icons.search),
               suffixIcon: InkWell(onTap: onBarcodeTap, child: const Icon(Icons.qr_code_scanner)),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: theme.cardColor,
               contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: theme.dividerColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: theme.dividerColor),
               ),
             ),
           ),
@@ -382,8 +382,8 @@ class PosSearchBar extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade300),
+            color: theme.cardColor,
+            border: Border.all(color: theme.dividerColor),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Row(
@@ -399,8 +399,8 @@ class PosSearchBar extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300),
+              color: theme.cardColor,
+              border: Border.all(color: theme.dividerColor),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.filter_alt_outlined),
@@ -428,6 +428,7 @@ class PosInvoiceTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 24.0),
       child: InkWell(
@@ -435,12 +436,12 @@ class PosInvoiceTab extends StatelessWidget {
         child: Row(
           children: [
             Icon(Icons.description_outlined,
-                color: isSelected ? Colors.blue : Colors.grey.shade600, size: 20),
+                color: isSelected ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color?.withOpacity(0.6), size: 20),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.blue : Colors.grey.shade800,
+                color: isSelected ? theme.colorScheme.primary : theme.textTheme.bodyMedium?.color,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 14,
               ),
@@ -449,7 +450,7 @@ class PosInvoiceTab extends StatelessWidget {
               const SizedBox(width: 8),
               CircleAvatar(
                 radius: 10,
-                backgroundColor: Colors.red,
+                backgroundColor: theme.colorScheme.error,
                 child: Text(badge!,
                     style: const TextStyle(fontSize: 10, color: Colors.white)),
               )
@@ -478,6 +479,7 @@ class CheckoutAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Row(
@@ -487,7 +489,7 @@ class CheckoutAction extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Received Amount", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text("Received Amount", style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color?.withOpacity(0.6))),
                   const SizedBox(height: 4),
                   TextField(
                     controller: TextEditingController(text: receivedAmount.toStringAsFixed(0)),
@@ -497,6 +499,7 @@ class CheckoutAction extends StatelessWidget {
                     },
                     decoration: InputDecoration(
                       prefixText: "₹ ",
+                      fillColor: theme.cardColor,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
@@ -510,7 +513,7 @@ class CheckoutAction extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -535,7 +538,7 @@ class CheckoutAction extends StatelessWidget {
           child: ElevatedButton(
             onPressed: isLoading ? null : onTap,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent.shade700,
+              backgroundColor: theme.colorScheme.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: isLoading 
@@ -572,17 +575,18 @@ class QuickShortcutItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: Colors.blue, size: 24),
+          Icon(icon, color: theme.colorScheme.primary, size: 24),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12)),
           Text(shortcut,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey,
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                   fontWeight: FontWeight.bold)),
         ],
       ),
@@ -605,19 +609,20 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: InkWell(
         onTap: onTap,
         child: Chip(
           label: Text(label),
-          backgroundColor: isSelected ? Colors.blue : Colors.white,
+          backgroundColor: isSelected ? theme.colorScheme.primary : theme.cardColor,
           labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
-          side: BorderSide(color: Colors.grey.shade300),
+          side: BorderSide(color: isSelected ? theme.colorScheme.primary : theme.dividerColor),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
@@ -640,29 +645,31 @@ class PosPagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _pageNavBtn(Icons.chevron_left, currentPage > 1 ? () => onPageChanged(currentPage - 1) : null),
+        _pageNavBtn(context, Icons.chevron_left, currentPage > 1 ? () => onPageChanged(currentPage - 1) : null),
         const SizedBox(width: 12),
-        Text("Page $currentPage of $totalPages", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+        Text("Page $currentPage of $totalPages", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.textTheme.bodySmall?.color?.withOpacity(0.6))),
         const SizedBox(width: 12),
-        _pageNavBtn(Icons.chevron_right, currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null),
+        _pageNavBtn(context, Icons.chevron_right, currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null),
       ],
     );
   }
 
-  Widget _pageNavBtn(IconData icon, VoidCallback? onTap) {
+  Widget _pageNavBtn(BuildContext context, IconData icon, VoidCallback? onTap) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(4),
-          color: onTap == null ? Colors.grey.shade50 : Colors.white,
+          color: onTap == null ? theme.dividerColor.withOpacity(0.1) : theme.cardColor,
         ),
-        child: Icon(icon, size: 18, color: onTap == null ? Colors.grey : Colors.black87),
+        child: Icon(icon, size: 18, color: onTap == null ? theme.textTheme.bodySmall?.color?.withOpacity(0.4) : theme.textTheme.bodyMedium?.color),
       ),
     );
   }

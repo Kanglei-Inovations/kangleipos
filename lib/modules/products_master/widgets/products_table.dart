@@ -22,18 +22,18 @@ class ProductsTable extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          color: theme.dividerColor,
         ),
-        boxShadow: [
+        boxShadow: !isDark ? [
           BoxShadow(
             color: const Color(0xFF64748B).withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
-        ],
+        ] : [],
       ),
       child: Column(
         children: [
@@ -56,19 +56,19 @@ class ProductsTable extends StatelessWidget {
                           dataRowMinHeight: 64,
                           dataRowMaxHeight: 64,
                           headingRowColor: WidgetStateProperty.all(
-                            isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
+                            theme.dividerColor.withOpacity(0.05),
                           ),
                           dividerThickness: 1,
                           columns: [
-                            _buildColumn('Image'),
-                            _buildColumn('Name'),
-                            _buildColumn('Category'),
-                            _buildColumn('Stock', numeric: true),
-                            _buildColumn('MRP', numeric: true),
-                            _buildColumn('Dis', numeric: true),
-                            _buildColumn('Sale Price', numeric: true),
-                            _buildColumn('Status'),
-                            _buildColumn('Action'),
+                            _buildColumn(context, 'Image'),
+                            _buildColumn(context, 'Name'),
+                            _buildColumn(context, 'Category'),
+                            _buildColumn(context, 'Stock', numeric: true),
+                            _buildColumn(context, 'MRP', numeric: true),
+                            _buildColumn(context, 'Dis', numeric: true),
+                            _buildColumn(context, 'Sale Price', numeric: true),
+                            _buildColumn(context, 'Status'),
+                            _buildColumn(context, 'Action'),
                           ],
                           rows: List.generate(paginatedProducts.length, (index) {
                             final p = paginatedProducts[index];
@@ -78,7 +78,7 @@ class ProductsTable extends StatelessWidget {
                             
                             return DataRow(
                               cells: [
-                                DataCell(_buildImagePreview(p.imageUrl)),
+                                DataCell(_buildImagePreview(context, p.imageUrl)),
                                 DataCell(
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +93,7 @@ class ProductsTable extends StatelessWidget {
                                           p.sku!,
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                                            color: theme.textTheme.bodySmall?.color,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -117,7 +117,7 @@ class ProductsTable extends StatelessWidget {
                                     style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w800, fontSize: 13),
                                   ),
                                 ),
-                                DataCell(Text(currencyFormat.format(p.price), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppTheme.primaryColor))),
+                                DataCell(Text(currencyFormat.format(p.price), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: theme.colorScheme.primary))),
                                 DataCell(_statusChip(
                                     isOutOfStock ? 'Out of Stock' : (isLowStock ? 'Low Stock' : 'Active'),
                                     isOutOfStock ? AppTheme.dangerColor : (isLowStock ? Colors.orange : AppTheme.successColor))),
@@ -152,14 +152,14 @@ class ProductsTable extends StatelessWidget {
                   'Showing ${(controller.currentPage.value - 1) * controller.rowsPerPage.value + 1} to '
                   '${((controller.currentPage.value - 1) * controller.rowsPerPage.value + controller.paginatedProducts.length)} '
                   'of ${controller.filteredProducts.length} entries', 
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54)
+                  style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color)
                 )),
                 Row(
                   children: [
-                    _buildPageBtn('<', false, isDark, onTap: () => controller.previousPage()),
+                    _buildPageBtn(context, '<', false, onTap: () => controller.previousPage()),
                     Obx(() => Text(' Page ${controller.currentPage.value} of ${controller.totalPages} ', 
-                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87))),
-                    _buildPageBtn('>', false, isDark, onTap: () => controller.nextPage()),
+                      style: TextStyle(fontSize: 12, color: theme.textTheme.bodyLarge?.color))),
+                    _buildPageBtn(context, '>', false, onTap: () => controller.nextPage()),
                   ],
                 ),
               ],
@@ -170,7 +170,8 @@ class ProductsTable extends StatelessWidget {
     );
   }
 
-  Widget _buildPageBtn(String text, bool active, bool isDark, {VoidCallback? onTap}) {
+  Widget _buildPageBtn(BuildContext context, String text, bool active, {VoidCallback? onTap}) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -178,14 +179,14 @@ class ProductsTable extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppTheme.primaryColor : Colors.transparent,
+          color: active ? theme.colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: active ? null : Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300),
+          border: active ? null : Border.all(color: theme.dividerColor),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+            color: active ? Colors.white : theme.textTheme.bodyLarge?.color,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
@@ -194,29 +195,31 @@ class ProductsTable extends StatelessWidget {
     );
   }
 
-  DataColumn _buildColumn(String label, {bool numeric = false}) {
+  DataColumn _buildColumn(BuildContext context, String label, {bool numeric = false}) {
+    final theme = Theme.of(context);
     return DataColumn(
       numeric: numeric,
       label: Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w900,
           fontSize: 11,
           letterSpacing: 0.8,
-          color: Color(0xFF64748B),
+          color: theme.textTheme.bodySmall?.color,
         ),
       ),
     );
   }
 
-  Widget _buildImagePreview(String? path) {
+  Widget _buildImagePreview(BuildContext context, String? path) {
+    final theme = Theme.of(context);
     return Container(
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: theme.dividerColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -224,7 +227,7 @@ class ProductsTable extends StatelessWidget {
             ? (path.startsWith('http') 
                 ? Image.network(path, fit: BoxFit.cover) 
                 : Image.file(File(path), fit: BoxFit.cover))
-            : const Icon(Icons.image_not_supported_rounded, size: 20, color: Color(0xFFCBD5E1)),
+            : Icon(Icons.image_not_supported_rounded, size: 20, color: theme.dividerColor),
       ),
     );
   }
@@ -236,7 +239,7 @@ class ProductsTable extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, size: 18, color: color),
@@ -265,7 +268,7 @@ class ProductsTable extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -275,3 +278,4 @@ class ProductsTable extends StatelessWidget {
     );
   }
 }
+

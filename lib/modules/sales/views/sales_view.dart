@@ -15,6 +15,7 @@ class SalesView extends GetView<SalesController> {
     return MainLayout(
       title: 'Sales',
       child: Obx(() {
+        controller.refreshAllData();
         if (controller.isLoading.value && controller.sales.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -110,13 +111,14 @@ class _ChartBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       height: height,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +128,7 @@ class _ChartBox extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               if (dropdownText != null)
                 Row(
@@ -134,19 +136,19 @@ class _ChartBox extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: theme.dividerColor),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         children: [
-                          Text(dropdownText!, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                          Text(dropdownText!, style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
                           const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade700, size: 16),
+                          Icon(Icons.keyboard_arrow_down, color: theme.textTheme.bodySmall?.color, size: 16),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.more_horiz, color: Colors.grey.shade400, size: 20),
+                    Icon(Icons.more_horiz, color: theme.textTheme.bodySmall?.color?.withOpacity(0.4), size: 20),
                   ],
                 ),
             ],
@@ -162,12 +164,13 @@ class _ChartBox extends StatelessWidget {
 class _RecentInvoicesTable extends GetView<SalesController> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return LayoutBuilder(builder: (context, constraints) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: theme.dividerColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,20 +188,20 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: theme.dividerColor),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey.shade700),
+                        Icon(Icons.calendar_today_outlined, size: 14, color: theme.textTheme.bodySmall?.color),
                         const SizedBox(width: 6),
                         const Text(
                           'May 01, 2025 - May 24, 2025',
                           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.grey.shade700),
+                        Icon(Icons.keyboard_arrow_down, size: 18, color: theme.textTheme.bodySmall?.color),
                       ],
                     ),
                   ),
@@ -215,18 +218,19 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                     flex: 3,
                     child: TextField(
                       onChanged: controller.updateSearch,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Search Invoice #, Customer...',
-                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: Icon(Icons.search, color: theme.textTheme.bodySmall?.color),
                         filled: true,
-                        fillColor: Color(0xFFF9FAFB),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(12))),
+                        fillColor: theme.dividerColor.withOpacity(0.05),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(12))),
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Obx(() => _buildFilterItem(
+                    context,
                     Icons.person_outline_rounded,
                     controller.selectedCustomerId.value,
                     ['All Customers', ...controller.customers.map((c) => c.name)],
@@ -234,6 +238,7 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                   )),
                   const SizedBox(width: 12),
                   Obx(() => _buildFilterItem(
+                    context,
                     Icons.payments_outlined,
                     controller.selectedPaymentMethod.value,
                     ['All Payment', 'CASH', 'UPI', 'CARD', 'SPLIT'],
@@ -241,6 +246,7 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                   )),
                   const SizedBox(width: 12),
                   Obx(() => _buildFilterItem(
+                    context,
                     Icons.info_outline_rounded,
                     controller.selectedStatus.value,
                     ['All Status', 'PAID', 'UNPAID', 'HOLD', 'RETURNED'],
@@ -248,6 +254,7 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                   )),
                   const SizedBox(width: 12),
                   Obx(() => _buildFilterItem(
+                    context,
                     Icons.calendar_today_outlined,
                     controller.selectedDateRange.value,
                     ['Today', 'Yesterday', 'Last 7 Days', 'This Month', 'All Time'],
@@ -271,25 +278,25 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minWidth: constraints.maxWidth - 24),
                       child: DataTable(
-                        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                        headingRowColor: WidgetStateProperty.all(theme.dividerColor.withOpacity(0.05)),
                         horizontalMargin: 24,
                         columnSpacing: 24,
                         dataRowMinHeight: 48,
                         dataRowMaxHeight: 48,
-                        columns: const [
-                          DataColumn(label: Text('Invoice No.', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Customer', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Date', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Amount', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Payment', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Status', style: TextStyle(fontSize: 12, color: Colors.black54))),
-                          DataColumn(label: Text('Action', style: TextStyle(fontSize: 12, color: Colors.black54))),
+                        columns: [
+                          DataColumn(label: Text('Invoice No.', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Customer', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Date', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Amount', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Payment', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Status', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
+                          DataColumn(label: Text('Action', style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
                         ],
                         rows: sales.map((inv) {
                           return DataRow(cells: [
                             DataCell(Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
                             DataCell(Text(inv.customerId ?? 'Walk-in', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-                            DataCell(Text(DateFormat('MMM dd, HH:mm').format(inv.createdAt), style: const TextStyle(fontSize: 12, color: Colors.black54))),
+                            DataCell(Text(DateFormat('MMM dd, HH:mm').format(inv.createdAt), style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
                             DataCell(Text('₹ ${inv.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
                             DataCell(_buildBadge(inv.paymentMethod, _getPaymentColor(inv.paymentMethod))),
                             DataCell(_buildBadge(inv.status, _getStatusColor(inv.status))),
@@ -319,13 +326,13 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                 children: [
                   Obx(() => Text(
                     'Showing ${(controller.currentPage.value - 1) * controller.rowsPerPage.value + 1} to ${((controller.currentPage.value - 1) * controller.rowsPerPage.value + controller.paginatedSales.length)} of ${controller.filteredSales.length} entries', 
-                    style: const TextStyle(fontSize: 11, color: Colors.black54)
+                    style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color)
                   )),
                   Row(
                     children: [
-                      _buildPageBtn('<', false, onTap: () => controller.previousPage()),
+                      _buildPageBtn(context, '<', false, onTap: () => controller.previousPage()),
                       Obx(() => Text(' Page ${controller.currentPage.value} of ${controller.totalPages} ', style: const TextStyle(fontSize: 12))),
-                      _buildPageBtn('>', false, onTap: () => controller.nextPage()),
+                      _buildPageBtn(context, '>', false, onTap: () => controller.nextPage()),
                     ],
                   ),
                 ],
@@ -337,25 +344,27 @@ class _RecentInvoicesTable extends GetView<SalesController> {
     });
   }
 
-  Widget _buildFilterItem(IconData icon, String current, List<String> options, Function(String?) onChanged) {
+  Widget _buildFilterItem(BuildContext context, IconData icon, String current, List<String> options, Function(String?) onChanged) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: Colors.grey.shade600),
+          Icon(icon, size: 18, color: theme.textTheme.bodySmall?.color),
           const SizedBox(width: 8),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: options.contains(current) ? current : options.first,
               onChanged: onChanged,
-              icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
-              style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold),
+              icon: Icon(Icons.keyboard_arrow_down, size: 16, color: theme.textTheme.bodySmall?.color),
+              style: TextStyle(fontSize: 12, color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.bold),
+              dropdownColor: theme.cardColor,
               items: options.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             ),
           ),
@@ -382,18 +391,19 @@ class _RecentInvoicesTable extends GetView<SalesController> {
     }
   }
 
-  Widget _buildPageBtn(String text, bool active, {VoidCallback? onTap}) {
+  Widget _buildPageBtn(BuildContext context, String text, bool active, {VoidCallback? onTap}) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 2),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? Colors.blue : Colors.transparent,
+          color: active ? theme.colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
-          border: active ? null : Border.all(color: Colors.grey.shade300),
+          border: active ? null : Border.all(color: theme.dividerColor),
         ),
-        child: Text(text, style: TextStyle(color: active ? Colors.white : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+        child: Text(text, style: TextStyle(color: active ? Colors.white : theme.textTheme.bodyLarge?.color, fontSize: 12, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -410,12 +420,13 @@ class _RecentInvoicesTable extends GetView<SalesController> {
 class _SalesByCategoryPanel extends GetView<SalesController> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +443,7 @@ class _SalesByCategoryPanel extends GetView<SalesController> {
                 final pct = total > 0 ? (e.value / total) : 0.0;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
-                  child: _buildCategoryItem(Icons.category_outlined, e.key, '₹ ${e.value.toStringAsFixed(2)}', '${(pct * 100).toStringAsFixed(0)}%', Colors.blue, pct),
+                  child: _buildCategoryItem(context, Icons.category_outlined, e.key, '₹ ${e.value.toStringAsFixed(2)}', '${(pct * 100).toStringAsFixed(0)}%', Colors.blue, pct),
                 );
               }).toList(),
             );
@@ -442,7 +453,8 @@ class _SalesByCategoryPanel extends GetView<SalesController> {
     );
   }
 
-  Widget _buildCategoryItem(IconData icon, String title, String amt, String pct, Color color, double progress) {
+  Widget _buildCategoryItem(BuildContext context, IconData icon, String title, String amt, String pct, Color color, double progress) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color, size: 18)),
@@ -458,7 +470,7 @@ class _SalesByCategoryPanel extends GetView<SalesController> {
           ),
         ),
         const SizedBox(width: 12),
-        Text(pct, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        Text(pct, style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color)),
       ],
     );
   }
@@ -467,12 +479,13 @@ class _SalesByCategoryPanel extends GetView<SalesController> {
 class _SalesSummaryPanel extends GetView<SalesController> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,19 +511,21 @@ class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.label, required this.value, required this.icon, required this.color, this.isLast = false});
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: EdgeInsets.only(bottom: isLast ? 0 : 16), child: Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)), const SizedBox(width: 12), Text(label, style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500)), const Spacer(), Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))]));
+    final theme = Theme.of(context);
+    return Padding(padding: EdgeInsets.only(bottom: isLast ? 0 : 16), child: Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: Icon(icon, size: 16, color: color)), const SizedBox(width: 12), Text(label, style: TextStyle(fontSize: 13, color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.w500)), const Spacer(), Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))]));
   }
 }
 
 class _TopCustomersPanel extends GetView<SalesController> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +537,7 @@ class _TopCustomersPanel extends GetView<SalesController> {
               return const Center(child: Text('No data', style: TextStyle(fontSize: 12)));
             }
             return Column(
-              children: controller.topCustomers.entries.map((e) => _CustomerRow(name: e.key, amount: '₹ ${e.value.toStringAsFixed(2)}', initial: e.key[0].toUpperCase(), color: Colors.blueAccent)).toList(),
+              children: controller.topCustomers.entries.map((e) => _CustomerRow(context, name: e.key, amount: '₹ ${e.value.toStringAsFixed(2)}', initial: e.key[0].toUpperCase(), color: Colors.blueAccent)).toList(),
             );
           }),
         ],
@@ -532,14 +547,16 @@ class _TopCustomersPanel extends GetView<SalesController> {
 }
 
 class _CustomerRow extends StatelessWidget {
+  final BuildContext context;
   final String name;
   final String amount;
   final String initial;
   final Color color;
   final bool isLast;
-  const _CustomerRow({required this.name, required this.amount, required this.initial, required this.color, this.isLast = false});
+  const _CustomerRow(this.context, {required this.name, required this.amount, required this.initial, required this.color, this.isLast = false});
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(padding: EdgeInsets.only(bottom: isLast ? 0 : 16), child: Row(children: [CircleAvatar(radius: 16, backgroundColor: color.withOpacity(0.1), child: Text(initial, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold))), const SizedBox(width: 12), Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)), const Spacer(), Text(amount, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))]));
   }
 }
@@ -547,6 +564,7 @@ class _CustomerRow extends StatelessWidget {
 class _SalesReturnChart extends GetView<SalesController> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Obx(() => Row(
       children: [
         Expanded(
@@ -561,15 +579,15 @@ class _SalesReturnChart extends GetView<SalesController> {
                   startDegreeOffset: -90,
                   sections: [
                     PieChartSectionData(color: Colors.redAccent, value: controller.totalReturnsAmount.value, radius: 15, showTitle: false),
-                    PieChartSectionData(color: Colors.grey.shade200, value: (controller.totalSalesAmount.value - controller.totalReturnsAmount.value).clamp(1.0, double.infinity), radius: 15, showTitle: false),
+                    PieChartSectionData(color: theme.dividerColor.withOpacity(0.1), value: (controller.totalSalesAmount.value - controller.totalReturnsAmount.value).clamp(1.0, double.infinity), radius: 15, showTitle: false),
                   ],
                 ),
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Returns', style: TextStyle(color: Colors.black54, fontSize: 10)),
-                  Text('₹ ${controller.totalReturnsAmount.value.toStringAsFixed(0)}', style: const TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('Returns', style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 10)),
+                  Text('₹ ${controller.totalReturnsAmount.value.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ],
@@ -581,11 +599,11 @@ class _SalesReturnChart extends GetView<SalesController> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildReturnStatRow('Return Orders', controller.totalReturnOrdersCount.value.toString()),
+              _buildReturnStatRow(context, 'Return Orders', controller.totalReturnOrdersCount.value.toString()),
               const Divider(height: 16),
-              _buildReturnStatRow('Return Amount', '₹ ${controller.totalReturnsAmount.value.toStringAsFixed(2)}'),
+              _buildReturnStatRow(context, 'Return Amount', '₹ ${controller.totalReturnsAmount.value.toStringAsFixed(2)}'),
               const Divider(height: 16),
-              _buildReturnStatRow('% of Sales', '${(controller.totalSalesAmount.value > 0 ? (controller.totalReturnsAmount.value / controller.totalSalesAmount.value * 100) : 0.0).toStringAsFixed(2)}%'),
+              _buildReturnStatRow(context, '% of Sales', '${(controller.totalSalesAmount.value > 0 ? (controller.totalReturnsAmount.value / controller.totalSalesAmount.value * 100) : 0.0).toStringAsFixed(2)}%'),
             ],
           ),
         ),
@@ -593,7 +611,8 @@ class _SalesReturnChart extends GetView<SalesController> {
     ));
   }
 
-  Widget _buildReturnStatRow(String label, String value) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)), Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87))]);
+  Widget _buildReturnStatRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color)), Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))]);
   }
 }

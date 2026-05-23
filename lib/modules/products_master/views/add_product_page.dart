@@ -9,13 +9,14 @@ class AddProductPage extends GetView<AddProductController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return MainLayout(
       title: 'Add New Product',
       child: Container(
-        color: const Color(0xFFF5F7FB),
+        color: theme.scaffoldBackgroundColor,
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -52,10 +53,11 @@ class AddProductPage extends GetView<AddProductController> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      color: Colors.white,
+      color: theme.cardColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -64,13 +66,13 @@ class AddProductPage extends GetView<AddProductController> {
             children: [
               Row(
                 children: [
-                  Text('Inventory', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-                  Icon(Icons.chevron_right, size: 16, color: Colors.grey.shade400),
-                  const Text('Products', style: TextStyle(color: Colors.blue, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text('Inventory', style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13)),
+                  Icon(Icons.chevron_right, size: 16, color: theme.textTheme.bodySmall?.color?.withOpacity(0.5)),
+                  Text('Products', style: TextStyle(color: theme.colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 4),
-              const Text('Add New Product', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              Text('Add New Product', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
             ],
           ),
           Row(
@@ -79,19 +81,19 @@ class AddProductPage extends GetView<AddProductController> {
                 onPressed: () => Get.back(),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                  side: BorderSide(color: theme.dividerColor),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('Cancel', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold)),
+                child: Text('Cancel', style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 12),
               Obx(() => ElevatedButton(
                 onPressed: controller.isLoading.value ? null : () => controller.saveProduct(),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                  backgroundColor: Get.theme.primaryColor,
+                  backgroundColor: theme.colorScheme.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 4,
-                  shadowColor: Get.theme.primaryColor.withValues(alpha: 0.4),
+                  elevation: 0,
                 ),
                 child: controller.isLoading.value 
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
