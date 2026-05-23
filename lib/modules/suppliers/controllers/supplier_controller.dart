@@ -8,6 +8,7 @@ class SupplierController extends GetxController {
   final _uuid = const Uuid();
 
   final RxList<Supplier> suppliers = <Supplier>[].obs;
+  final RxList<Purchase> purchases = <Purchase>[].obs;
   final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
 
@@ -21,11 +22,20 @@ class SupplierController extends GetxController {
     isLoading.value = true;
     try {
       final list = await db.select(db.suppliers).get();
+      final pList = await db.select(db.purchases).get();
       suppliers.assignAll(list);
+      purchases.assignAll(pList);
     } finally {
       isLoading.value = false;
     }
   }
+
+  // KPIs
+  int get totalSuppliers => suppliers.length;
+  double get totalPayable => suppliers.fold(0.0, (sum, s) => sum + s.balanceDue);
+  double get totalPurchaseAmount => purchases.fold(0.0, (sum, p) => sum + p.grandTotal);
+  double get amountPaid => totalPurchaseAmount > 0 ? totalPurchaseAmount * 0.8 : 0; // Mocked
+  double get overdueAmount => totalPayable * 0.2; // Mocked
 
   List<Supplier> get filteredSuppliers {
     return suppliers.where((s) {

@@ -41,11 +41,34 @@ class InventoryController extends GetxController {
   List<Product> get filteredProducts {
     return products.where((p) {
       final matchesSearch = p.name.toLowerCase().contains(searchQuery.value.toLowerCase()) || 
-                           (p.barcode?.contains(searchQuery.value) ?? false);
+                           (p.barcode?.contains(searchQuery.value) ?? false) ||
+                           (p.sku?.toLowerCase().contains(searchQuery.value.toLowerCase()) ?? false);
       final matchesCategory = selectedCategoryId.value == 'All' || p.categoryId == selectedCategoryId.value;
       return matchesSearch && matchesCategory;
     }).toList();
   }
+
+  // METRICS
+  int get totalProducts => products.length;
+  
+  double get totalStock => products.fold(0.0, (sum, p) => sum + p.stockQuantity);
+  
+  int get lowStockCount => products.where((p) => p.stockQuantity <= p.lowStockAlert && p.stockQuantity > 0).length;
+  
+  int get outOfStockCount => products.where((p) => p.stockQuantity <= 0).length;
+  
+  double get totalStockValue => products.fold(0.0, (sum, p) => sum + (p.stockQuantity * (p.costPrice ?? 0.0)));
+
+  Map<String, int> get categoryCounts {
+    final counts = <String, int>{};
+    for (var p in products) {
+      final catName = categories.firstWhereOrNull((c) => c.id == p.categoryId)?.name ?? 'Others';
+      counts[catName] = (counts[catName] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  List<Product> get lowStockProducts => products.where((p) => p.stockQuantity <= p.lowStockAlert).toList();
 
   // CRUD OPERATIONS
   Future<void> addProduct(ProductsCompanion entry) async {

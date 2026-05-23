@@ -11,6 +11,8 @@ class UserController extends GetxController {
 
   final RxList<User> users = <User>[].obs;
   final RxBool isLoading = false.obs;
+  final RxString searchQuery = ''.obs;
+  final RxString selectedTab = 'All Users'.obs;
 
   @override
   void onInit() {
@@ -26,6 +28,30 @@ class UserController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // KPIs
+  int get totalUsers => users.length;
+  int get activeUsers => users.length; // Mocked
+  int get newUsers => 5; // Mocked
+  int get inactiveUsers => 3; // Mocked
+  double get avgLoginToday => 7.7; // Mocked
+
+  List<User> get filteredUsers {
+    return users.where((u) {
+      final q = searchQuery.value.toLowerCase();
+      return u.name.toLowerCase().contains(q) || u.username.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  Map<String, double> get roleDistribution {
+    return {
+      'Admin': 2,
+      'Manager': 4,
+      'Sales Executive': 8,
+      'Accountant': 3,
+      'Others': 11,
+    };
   }
 
   String _hashPin(String pin) {

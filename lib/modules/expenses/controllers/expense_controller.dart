@@ -30,6 +30,36 @@ class ExpenseController extends GetxController {
     }
   }
 
+  // KPIs
+  double get totalExpenses => expenses.fold(0.0, (sum, e) => sum + e.amount);
+  
+  double get totalThisMonth {
+    final now = DateTime.now();
+    return expenses.where((e) => e.expenseDate.month == now.month && e.expenseDate.year == now.year).fold(0.0, (sum, e) => sum + e.amount);
+  }
+  
+  double get totalThisWeek {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    return expenses.where((e) => e.expenseDate.isAfter(startOfWeek)).fold(0.0, (sum, e) => sum + e.amount);
+  }
+  
+  double get totalToday {
+    final now = DateTime.now();
+    return expenses.where((e) => e.expenseDate.day == now.day && e.expenseDate.month == now.month && e.expenseDate.year == now.year).fold(0.0, (sum, e) => sum + e.amount);
+  }
+
+  int get pendingApprovals => 5; // Mocked
+
+  // Category Summaries
+  Map<String, double> get categoryTotals {
+    final map = <String, double>{};
+    for (var e in expenses) {
+      map[e.category] = (map[e.category] ?? 0) + e.amount;
+    }
+    return map;
+  }
+
   List<Expense> get filteredExpenses {
     return expenses.where((e) {
       final q = searchQuery.value.toLowerCase();

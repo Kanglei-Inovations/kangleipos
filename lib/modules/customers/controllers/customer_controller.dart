@@ -10,6 +10,7 @@ class CustomerController extends GetxController {
   final RxList<Customer> customers = <Customer>[].obs;
   final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
+  final Rx<Customer?> selectedCustomerForDetails = Rx<Customer?>(null);
 
   @override
   void onInit() {
@@ -22,10 +23,20 @@ class CustomerController extends GetxController {
     try {
       final list = await db.select(db.customers).get();
       customers.assignAll(list);
+      if (customers.isNotEmpty && selectedCustomerForDetails.value == null) {
+        selectedCustomerForDetails.value = customers.first;
+      }
     } finally {
       isLoading.value = false;
     }
   }
+
+  // KPIs
+  int get totalCustomers => customers.length;
+  int get activeCustomers => customers.length; // Mocked
+  int get inactiveCustomers => 0; // Mocked
+  double get totalReceivable => customers.fold(0.0, (sum, c) => sum + c.balanceDue);
+  double get overdueAmount => totalReceivable * 0.15; // Mocked
 
   List<Customer> get filteredCustomers {
     return customers.where((c) {

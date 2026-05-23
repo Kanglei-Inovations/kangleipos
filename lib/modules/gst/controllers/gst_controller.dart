@@ -10,6 +10,8 @@ class GstController extends GetxController {
   final RxBool isLoading = false.obs;
 
   final RxList<Invoice> gstInvoices = <Invoice>[].obs;
+  final RxString searchQuery = ''.obs;
+  final RxString selectedTab = 'GSTR-1'.obs;
 
   @override
   void onInit() {
@@ -28,5 +30,18 @@ class GstController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // KPIs
+  double get totalOutputTax => totalTaxCollected.value;
+  double get totalInputTaxCredit => totalTaxCollected.value * 0.4; // Mocked
+  double get netTaxPayable => totalOutputTax - totalInputTaxCredit;
+  double get taxLiability => totalOutputTax;
+
+  List<Invoice> get filteredInvoices {
+    return gstInvoices.where((i) {
+      final q = searchQuery.value.toLowerCase();
+      return i.invoiceNumber.toLowerCase().contains(q);
+    }).toList();
   }
 }

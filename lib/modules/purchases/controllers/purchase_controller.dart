@@ -21,9 +21,12 @@ class PurchaseController extends GetxController {
   final RxList<PurchaseItem> items = <PurchaseItem>[].obs;
   final RxList<Supplier> suppliers = <Supplier>[].obs;
   final RxList<Product> products = <Product>[].obs;
+  final RxList<Purchase> purchaseHistory = <Purchase>[].obs;
   final Rx<Supplier?> selectedSupplier = Rx<Supplier?>(null);
   
   final RxBool isLoading = false.obs;
+  final RxString searchQuery = ''.obs;
+  final RxString selectedTab = 'All Purchases'.obs;
 
   @override
   void onInit() {
@@ -36,11 +39,35 @@ class PurchaseController extends GetxController {
     try {
       final sList = await db.select(db.suppliers).get();
       final pList = await db.select(db.products).get();
+      final hList = await db.select(db.purchases).get();
+      
       suppliers.assignAll(sList);
       products.assignAll(pList);
+      purchaseHistory.assignAll(hList);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // KPI GETTERS
+  double get totalPurchases => purchaseHistory.fold(0.0, (sum, p) => sum + p.grandTotal);
+  double get totalPaid => purchaseHistory.fold(0.0, (sum, p) => sum + (p.grandTotal * 0.8)); // Mocked logic
+  double get totalDue => totalPurchases - totalPaid;
+  int get totalInvoices => purchaseHistory.length;
+
+  List<Purchase> get filteredPurchases {
+    return purchaseHistory.where((p) {
+      final matchesSearch = p.purchaseNumber.toLowerCase().contains(searchQuery.value.toLowerCase());
+      return matchesSearch;
+    }).toList();
+  }
+
+  Map<String, double> get purchaseSummaryData {
+    return {
+      'Paid': totalPaid,
+      'Partial': totalPurchases * 0.1,
+      'Due': totalDue - (totalPurchases * 0.1),
+    };
   }
 
   void addItem(Product product) {
