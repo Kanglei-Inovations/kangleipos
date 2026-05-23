@@ -125,7 +125,8 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                       ? 1180.0
                       : double.infinity;
 
-          final showLeftPanel = screenWidth >= 1200 && screenHeight >= 760;
+          // Adjust threshold for left panel to be more inclusive of smaller laptops
+          final showLeftPanel = screenWidth >= 1200 && screenHeight >= 700;
 
           return Stack(
             children: [
@@ -136,7 +137,9 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               ),
               SafeArea(
                 child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: (isDesktop || isLaptop) && screenHeight >= 720
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: screenHeight,
@@ -149,14 +152,15 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(
                             horizontalPadding,
-                            isMobile ? 18 : 28,
+                            isMobile ? 12 : (screenHeight < 800 ? 12 : 16),
                             horizontalPadding,
-                            22,
+                            screenHeight < 800 ? 8 : 12,
                           ),
                           child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               _TopHeader(isMobile: isMobile),
-                              SizedBox(height: isDesktop ? 74 : 38),
+                              SizedBox(height: isDesktop ? (screenHeight < 800 ? 20 : 32) : 16),
                               if (isDesktop || isLaptop)
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -168,7 +172,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                         screenHeight: screenHeight,
                                       ),
                                     ),
-                                    SizedBox(width: isLaptop ? 28 : 52),
+                                    SizedBox(width: isLaptop ? 20 : 36),
                                     _LoginCard(
                                       formKey: _formKey,
                                       tabController: _tabController,
@@ -220,13 +224,13 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                     isLaptop: isLaptop,
                                   ),
                                 ),
-                              SizedBox(height: isDesktop ? 56 : 28),
+                              SizedBox(height: isDesktop ? (screenHeight < 800 ? 16 : 24) : 12),
                               _FeatureCards(
                                 isMobile: isMobile,
                                 isTablet: isTablet,
                                 isLaptop: isLaptop,
                               ),
-                              const SizedBox(height: 26),
+                              SizedBox(height: screenHeight < 800 ? 12 : 20),
                               const _LoginFooter(),
                             ],
                           ),
@@ -238,6 +242,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
               ),
             ],
           );
+
         },
       ),
     );
@@ -490,34 +495,37 @@ class _BrandHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final compactHeader = isCompact || screenHeight < 800;
+
     return Row(
       children: [
-        _LogoMark(size: isCompact ? 48 : 72),
-        SizedBox(width: isCompact ? 12 : 18),
+        _LogoMark(size: compactHeader ? 44 : 64),
+        SizedBox(width: compactHeader ? 10 : 16),
         Flexible(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PRINTONEX ERP',
+                'KANGLEI POS',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: isCompact ? 19 : 31,
+                  fontSize: compactHeader ? 18 : 28,
                   height: 1,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
                 ),
               ),
-              SizedBox(height: isCompact ? 5 : 9),
+              SizedBox(height: compactHeader ? 4 : 8),
               Text(
                 'Enterprise Solution',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.74),
-                  fontSize: isCompact ? 12 : 18,
+                  fontSize: compactHeader ? 11 : 16,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0,
                 ),
@@ -554,8 +562,8 @@ class _LogoMark extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF8B5CF6).withOpacity(0.38),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: size * 0.4,
+            offset: Offset(0, size * 0.2),
           ),
         ],
       ),
@@ -581,13 +589,15 @@ class _TopRightActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = context.watch<AppThemeController>();
+    final screenHeight = MediaQuery.of(context).size.height;
+    final compactActions = isCompact || screenHeight < 800;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          padding: EdgeInsets.all(isCompact ? 6 : 8),
+          padding: EdgeInsets.all(compactActions ? 4 : 8),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(999),
@@ -600,21 +610,23 @@ class _TopRightActions extends StatelessWidget {
                 icon: Icons.light_mode_outlined,
                 isActive: !themeController.isDarkMode,
                 onTap: themeController.toggleTheme,
+                size: compactActions ? 36 : 48,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               _ActionCircle(
                 icon: Icons.dark_mode_rounded,
                 isActive: themeController.isDarkMode,
                 onTap: themeController.toggleTheme,
+                size: compactActions ? 36 : 48,
               ),
               if (!isCompact) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Container(
                     width: 1,
-                    height: 32,
+                    height: compactActions ? 24 : 32,
                     color: Colors.white.withOpacity(0.10)),
-                const SizedBox(width: 8),
-                const _LanguagePill(),
+                const SizedBox(width: 6),
+                _LanguagePill(isCompact: compactActions),
               ],
             ],
           ),
@@ -628,11 +640,13 @@ class _ActionCircle extends StatefulWidget {
   final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
+  final double size;
 
   const _ActionCircle({
     required this.icon,
     required this.isActive,
     required this.onTap,
+    this.size = 48,
   });
 
   @override
@@ -656,8 +670,8 @@ class _ActionCircleState extends State<_ActionCircle> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
-            width: 48,
-            height: 48,
+            width: widget.size,
+            height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: widget.isActive
@@ -672,7 +686,7 @@ class _ActionCircleState extends State<_ActionCircle> {
                     ]
                   : null,
             ),
-            child: Icon(widget.icon, color: Colors.white, size: 23),
+            child: Icon(widget.icon, color: Colors.white, size: widget.size * 0.48),
           ),
         ),
       ),
@@ -681,13 +695,14 @@ class _ActionCircleState extends State<_ActionCircle> {
 }
 
 class _LanguagePill extends StatelessWidget {
-  const _LanguagePill();
+  final bool isCompact;
+  const _LanguagePill({this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: isCompact ? 36 : 48,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.07),
         borderRadius: BorderRadius.circular(999),
@@ -695,19 +710,19 @@ class _LanguagePill extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, color: Colors.white, size: 23),
-          const SizedBox(width: 10),
-          const Text(
+          Icon(Icons.language_rounded, color: Colors.white, size: isCompact ? 18 : 23),
+          SizedBox(width: isCompact ? 6 : 10),
+          Text(
             'English',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontSize: isCompact ? 13 : 15,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Icon(Icons.keyboard_arrow_down_rounded,
-              color: Colors.white.withOpacity(0.78)),
+              color: Colors.white.withOpacity(0.78), size: isCompact ? 18 : 24),
         ],
       ),
     );
@@ -735,7 +750,7 @@ class _LeftShowcase extends StatelessWidget {
     }
 
     return SizedBox(
-      height: math.min(screenHeight * 0.72, 680),
+      height: math.min(screenHeight * 0.65, 580),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -1163,38 +1178,40 @@ class _FloatingCube extends StatelessWidget {
 class _SecurityStory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isCompact = screenHeight < 800;
     return SizedBox(
       width: 320,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: isCompact ? 48 : 64,
+            height: isCompact ? 48 : 64,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: Colors.white.withOpacity(0.10)),
             ),
-            child: const Icon(Icons.security_rounded,
-                color: Color(0xFF60A5FA), size: 32),
+            child: Icon(Icons.security_rounded,
+                color: const Color(0xFF60A5FA), size: isCompact ? 24 : 32),
           ),
-          const SizedBox(height: 58),
-          const Text(
+          SizedBox(height: isCompact ? 16 : 32),
+          Text(
             'Secure. Smart. Simple.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 22,
+              fontSize: isCompact ? 18 : 22,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             'Manage your business,\nanytime, anywhere.',
             style: TextStyle(
               color: Colors.white.withOpacity(0.70),
-              fontSize: 17,
-              height: 1.45,
+              fontSize: isCompact ? 14 : 17,
+              height: 1.4,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1268,6 +1285,7 @@ class _LoginCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final cardWidth = isMobile
         ? double.infinity
         : isTablet
@@ -1276,10 +1294,10 @@ class _LoginCard extends StatelessWidget {
                 ? 520.0
                 : 580.0;
     final cardPadding = isMobile
-        ? 18.0
+        ? 16.0
         : isTablet
-            ? 22.0
-            : 32.0;
+            ? 18.0
+            : (screenHeight < 800 ? 18.0 : 24.0);
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: cardWidth),
@@ -1327,42 +1345,40 @@ class _LoginCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: isMobile ? 30 : 36,
+                    fontSize: isMobile ? 24 : (screenHeight < 800 ? 26 : 32),
                     fontWeight: FontWeight.w900,
                     height: 1,
                     letterSpacing: 0,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 Text(
                   'Sign in to continue to Printonex ERP',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.82),
-                    fontSize: isMobile ? 15 : 18,
+                    fontSize: isMobile ? 14 : (screenHeight < 800 ? 14 : 16),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(
                   height: isMobile
-                      ? 18
+                      ? 12
                       : isTablet
-                          ? 24
-                          : isLaptop
-                              ? 28
-                              : 42,
+                          ? 14
+                          : (screenHeight < 800 ? 16 : 24),
                 ),
                 _LoginMethodTabs(
                   controller: tabController,
                   isMobile: isMobile,
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: screenHeight < 800 ? 12 : 20),
                 SizedBox(
                   height: isMobile
-                      ? 460
+                      ? 420
                       : isTablet
-                          ? 430
-                          : 400,
+                          ? 370
+                          : (screenHeight < 800 ? 300 : 340),
                   child: TabBarView(
                     controller: tabController,
                     physics: const BouncingScrollPhysics(),
@@ -1390,13 +1406,13 @@ class _LoginCard extends StatelessWidget {
                   ),
                 ),
                 const _CardDivider(),
-                const SizedBox(height: 18),
+                SizedBox(height: screenHeight < 800 ? 8 : 14),
                 _GlassOutlineButton(
                   icon: Icons.account_balance_rounded,
                   label: 'Login as Another Store',
                   onTap: () {},
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: screenHeight < 800 ? 12 : 18),
                 Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -1405,7 +1421,7 @@ class _LoginCard extends StatelessWidget {
                       "Don't have an account? ",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.74),
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1418,7 +1434,7 @@ class _LoginCard extends StatelessWidget {
                           'Contact Administrator',
                           style: TextStyle(
                             color: Color(0xFF60A5FA),
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -1446,6 +1462,7 @@ class _LoginMethodTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final tabs = [
       _MethodTabData(Icons.lock_outline_rounded, 'Password'),
       _MethodTabData(Icons.dialpad_rounded, 'PIN'),
@@ -1458,7 +1475,7 @@ class _LoginMethodTabs extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          height: 64,
+          height: screenHeight < 800 ? 48 : 56,
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
@@ -1497,14 +1514,14 @@ class _LoginMethodTabs extends StatelessWidget {
             tabs: [
               for (final tab in tabs)
                 Tab(
-                  height: 56,
+                  height: screenHeight < 800 ? 40 : 48,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minWidth: isMobile ? 112 : 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(tab.icon, size: 20),
-                        const SizedBox(width: 9),
+                        Icon(tab.icon, size: 18),
+                        const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             tab.label,
@@ -1550,6 +1567,7 @@ class _PasswordTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final auth = Get.find<AuthController>();
 
     return Form(
@@ -1569,7 +1587,7 @@ class _PasswordTab extends StatelessWidget {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: screenHeight < 800 ? 8 : 12),
           Obx(
             () => _GlassTextField(
               controller: passwordController,
@@ -1591,16 +1609,22 @@ class _PasswordTab extends StatelessWidget {
               onSubmitted: (_) => onSubmit(),
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: screenHeight < 800 ? 2 : 4),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {},
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               child: const Text(
                 'Forgot Password?',
                 style: TextStyle(
                   color: Color(0xFF60A5FA),
                   fontWeight: FontWeight.w800,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -1612,23 +1636,24 @@ class _PasswordTab extends StatelessWidget {
                 value: rememberDevice,
                 onChanged: onRememberChanged,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Remember this device',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.92),
                     fontWeight: FontWeight.w800,
+                    fontSize: 13,
                   ),
                 ),
               ),
               Icon(Icons.info_outline_rounded,
-                  color: Colors.white.withOpacity(0.38), size: 19),
-              const Spacer(),
+                  color: Colors.white.withOpacity(0.38), size: 17),
+              const SizedBox(width: 8),
               const _SecureLoginBadge(),
             ],
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: screenHeight < 800 ? 10 : 16),
           _GradientLoginButton(label: 'Sign In', onTap: onSubmit),
         ],
       ),
@@ -1680,6 +1705,7 @@ class _GlassTextFieldState extends State<_GlassTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final focused = _focusNode.hasFocus;
 
     return Column(
@@ -1690,10 +1716,10 @@ class _GlassTextFieldState extends State<_GlassTextField> {
           style: TextStyle(
             color: Colors.white.withOpacity(0.94),
             fontWeight: FontWeight.w800,
-            fontSize: 15,
+            fontSize: screenHeight < 800 ? 13 : 14,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: screenHeight < 800 ? 5 : 8),
         AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
@@ -1722,9 +1748,9 @@ class _GlassTextFieldState extends State<_GlassTextField> {
             obscureText: widget.obscureText,
             validator: widget.validator,
             onFieldSubmitted: widget.onSubmitted,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: screenHeight < 800 ? 15 : 17,
               fontWeight: FontWeight.w700,
             ),
             cursorColor: const Color(0xFF60A5FA),
@@ -1735,16 +1761,18 @@ class _GlassTextFieldState extends State<_GlassTextField> {
               focusedBorder: InputBorder.none,
               errorBorder: InputBorder.none,
               focusedErrorBorder: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 19),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: screenHeight < 800 ? 11 : 16,
+              ),
               prefixIcon: Icon(widget.icon,
-                  color: Colors.white.withOpacity(0.70), size: 23),
+                  color: Colors.white.withOpacity(0.70), size: 22),
               suffixIcon: widget.suffixIcon == null
                   ? null
                   : IconButton(
                       onPressed: widget.onSuffixTap,
                       icon: Icon(widget.suffixIcon,
-                          color: Colors.white.withOpacity(0.78)),
+                          color: Colors.white.withOpacity(0.78), size: 20),
                     ),
             ),
           ),
@@ -1775,6 +1803,7 @@ class _PinTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return AnimatedSlide(
       offset: hasError ? const Offset(0.025, 0) : Offset.zero,
       duration: const Duration(milliseconds: 80),
@@ -1782,27 +1811,28 @@ class _PinTab extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Enter your 4  digit secure PIN',
+            'Enter your 4 digit secure PIN',
             style: TextStyle(
               color: Colors.white.withOpacity(0.78),
               fontWeight: FontWeight.w700,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: screenHeight < 800 ? 8 : 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               for (var index = 0; index < 4; index++)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
-                  width: 42,
-                  height: 48,
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  width: screenHeight < 800 ? 34 : 40,
+                  height: screenHeight < 800 ? 40 : 46,
                   decoration: BoxDecoration(
                     color: index < pin.length
                         ? const Color(0xFF6366F1).withOpacity(0.42)
                         : Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: hasError
                           ? AppTheme.dangerColor
@@ -1833,7 +1863,7 @@ class _PinTab extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: screenHeight < 800 ? 10 : 16),
           Expanded(
             child: _PinKeypad(
               onKey: onKey,
@@ -1844,23 +1874,28 @@ class _PinTab extends StatelessWidget {
           Row(
             children: [
               _PremiumCheckbox(
-                  value: rememberPin, onChanged: onRememberChanged),
-              const SizedBox(width: 12),
+                value: rememberPin,
+                onChanged: onRememberChanged,
+              ),
+              const SizedBox(width: 10),
               Text(
                 'Remember PIN',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.88),
                   fontWeight: FontWeight.w800,
+                  fontSize: 13,
                 ),
               ),
               const Spacer(),
               TextButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.face_rounded, size: 18),
+                icon: const Icon(Icons.face_rounded, size: 16),
                 label: const Text('Face ID'),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF60A5FA),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
                 ),
               ),
             ],
@@ -1884,11 +1919,12 @@ class _PinKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final buttonSize = math.min(58.0, constraints.maxHeight / 4.2);
+        final buttonSize = math.min(screenHeight < 800 ? 42.0 : 50.0, constraints.maxHeight / 4.2);
 
         return Column(
           children: [
@@ -1904,7 +1940,7 @@ class _PinKeypad extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: screenHeight < 800 ? 3 : 6),
             ],
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -2008,6 +2044,7 @@ class _PinButtonShellState extends State<_PinButtonShell> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
@@ -2020,7 +2057,7 @@ class _PinButtonShellState extends State<_PinButtonShell> {
           child: AnimatedContainer(
             width: widget.size,
             height: widget.size,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
+            margin: EdgeInsets.symmetric(horizontal: screenHeight < 800 ? 5 : 8),
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -2047,6 +2084,7 @@ class _FingerprintTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -2054,8 +2092,8 @@ class _FingerprintTab extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             SizedBox(
-              width: 170,
-              height: 170,
+              width: screenHeight < 800 ? 100 : 150,
+              height: screenHeight < 800 ? 100 : 150,
               child: Lottie.asset(
                 'assets/lottie/sync_pulse.json',
                 repeat: true,
@@ -2063,8 +2101,8 @@ class _FingerprintTab extends StatelessWidget {
               ),
             ),
             Container(
-              width: 118,
-              height: 118,
+              width: screenHeight < 800 ? 76 : 100,
+              height: screenHeight < 800 ? 76 : 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -2075,32 +2113,33 @@ class _FingerprintTab extends StatelessWidget {
                 ),
                 border: Border.all(color: Colors.white.withOpacity(0.16)),
               ),
-              child: const Icon(Icons.fingerprint_rounded,
-                  color: Colors.white, size: 72),
+              child: Icon(Icons.fingerprint_rounded,
+                  color: Colors.white, size: screenHeight < 800 ? 44 : 64),
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        const Text(
+        SizedBox(height: screenHeight < 800 ? 10 : 20),
+        Text(
           'Touch fingerprint sensor to login',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: screenHeight < 800 ? 16 : 18,
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: screenHeight < 800 ? 5 : 8),
         Text(
           'Device support detection is ready. Use password or PIN as fallback.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white.withOpacity(0.68),
             fontWeight: FontWeight.w600,
-            height: 1.4,
+            fontSize: 13,
+            height: 1.3,
           ),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: screenHeight < 800 ? 12 : 24),
         _GlassOutlineButton(
           icon: Icons.lock_reset_rounded,
           label: 'Use Password Instead',
@@ -2116,28 +2155,30 @@ class _QrLoginTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const _QrScannerFrame(),
-        const SizedBox(height: 26),
-        const Text(
+        SizedBox(height: screenHeight < 800 ? 10 : 20),
+        Text(
           'Scan QR from desktop to login',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: screenHeight < 800 ? 16 : 18,
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: screenHeight < 800 ? 5 : 8),
         Text(
           'Open Printonex ERP on your trusted device and scan the secure pairing code.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white.withOpacity(0.68),
             fontWeight: FontWeight.w600,
-            height: 1.4,
+            fontSize: 13,
+            height: 1.3,
           ),
         ),
       ],
@@ -2173,19 +2214,23 @@ class _QrScannerFrameState extends State<_QrScannerFrame>
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final frameSize = screenHeight < 800 ? 110.0 : 160.0;
+    final qrIconSize = screenHeight < 800 ? 64.0 : 100.0;
+
     return Container(
-      width: 190,
-      height: 190,
+      width: frameSize,
+      height: frameSize,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.18)),
       ),
       child: Stack(
         children: [
           Center(
             child: Icon(Icons.qr_code_2_rounded,
-                color: Colors.white.withOpacity(0.80), size: 118),
+                color: Colors.white.withOpacity(0.80), size: qrIconSize),
           ),
           Positioned.fill(
             child: CustomPaint(
@@ -2196,11 +2241,12 @@ class _QrScannerFrameState extends State<_QrScannerFrame>
             animation: _controller,
             builder: (context, _) {
               return Positioned(
-                left: 22,
-                right: 22,
-                top: 28 + (_controller.value * 126),
+                left: 18,
+                right: 18,
+                top: (screenHeight < 800 ? 16.0 : 24.0) +
+                    (_controller.value * (frameSize - (screenHeight < 800 ? 32.0 : 48.0))),
                 child: Container(
-                  height: 3,
+                  height: 2.5,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [
@@ -2212,7 +2258,7 @@ class _QrScannerFrameState extends State<_QrScannerFrame>
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF22D3EE).withOpacity(0.62),
-                        blurRadius: 14,
+                        blurRadius: 10,
                       ),
                     ],
                   ),
@@ -2231,10 +2277,10 @@ class _QrCornerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF22D3EE)
-      ..strokeWidth = 4
+      ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
-    const inset = 20.0;
-    const length = 34.0;
+    const inset = 16.0;
+    const length = 28.0;
 
     canvas.drawLine(
         const Offset(inset, inset), const Offset(inset + length, inset), paint);
@@ -2274,8 +2320,8 @@ class _PremiumCheckbox extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: 28,
-        height: 28,
+        width: 24,
+        height: 24,
         decoration: BoxDecoration(
           gradient: value
               ? const LinearGradient(
@@ -2283,7 +2329,7 @@ class _PremiumCheckbox extends StatelessWidget {
                 )
               : null,
           color: value ? null : Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: value
                 ? const Color(0xFF60A5FA)
@@ -2293,13 +2339,13 @@ class _PremiumCheckbox extends StatelessWidget {
               ? [
                   BoxShadow(
                     color: const Color(0xFF3B82F6).withOpacity(0.36),
-                    blurRadius: 16,
+                    blurRadius: 12,
                   ),
                 ]
               : null,
         ),
         child: value
-            ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+            ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
             : null,
       ),
     );
@@ -2346,6 +2392,7 @@ class _GradientLoginButtonState extends State<_GradientLoginButton> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final auth = Get.find<AuthController>();
 
     return MouseRegion(
@@ -2359,7 +2406,7 @@ class _GradientLoginButtonState extends State<_GradientLoginButton> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
-            height: 64,
+            height: screenHeight < 800 ? 48 : 54,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [
@@ -2426,6 +2473,7 @@ class _GlassOutlineButtonState extends State<_GlassOutlineButton> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
@@ -2437,7 +2485,7 @@ class _GlassOutlineButtonState extends State<_GlassOutlineButton> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            height: 60,
+            height: screenHeight < 800 ? 44 : 52,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(_hovering ? 0.10 : 0.04),
               borderRadius: BorderRadius.circular(12),
@@ -2539,7 +2587,7 @@ class _FeatureCards extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            padding: EdgeInsets.all(isMobile ? 14 : 22),
+            padding: EdgeInsets.all(isMobile ? 12 : 16),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.07),
               borderRadius: BorderRadius.circular(30),
@@ -2561,12 +2609,13 @@ class _FeatureCards extends StatelessWidget {
                         : isLaptop
                             ? 2
                             : 4;
+                final spacing = isMobile ? 12.0 : 14.0;
                 final width =
-                    (constraints.maxWidth - ((columns - 1) * 16)) / columns;
+                    (constraints.maxWidth - ((columns - 1) * spacing)) / columns;
 
                 return Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
+                  spacing: spacing,
+                  runSpacing: spacing,
                   children: [
                     for (final feature in features)
                       SizedBox(
@@ -2605,7 +2654,7 @@ class _FeatureTileState extends State<_FeatureTile> {
       onExit: (_) => setState(() => _hovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(_hovering ? 0.08 : 0.02),
           borderRadius: BorderRadius.circular(22),
@@ -2614,21 +2663,21 @@ class _FeatureTileState extends State<_FeatureTile> {
         child: Column(
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: feature.color.withOpacity(0.16),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: feature.color.withOpacity(_hovering ? 0.35 : 0.18),
-                    blurRadius: 22,
+                    blurRadius: 20,
                   ),
                 ],
               ),
-              child: Icon(feature.icon, color: feature.color, size: 32),
+              child: Icon(feature.icon, color: feature.color, size: 26),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               feature.title,
               maxLines: 1,
@@ -2637,10 +2686,10 @@ class _FeatureTileState extends State<_FeatureTile> {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 15,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               feature.subtitle,
               maxLines: 1,
@@ -2649,7 +2698,7 @@ class _FeatureTileState extends State<_FeatureTile> {
               style: TextStyle(
                 color: Colors.white.withOpacity(0.68),
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ],

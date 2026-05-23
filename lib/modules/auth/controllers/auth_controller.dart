@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:drift/drift.dart' as d;
 import 'package:uuid/uuid.dart';
@@ -107,11 +108,13 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       final hashed = _hashSecret(pin);
-      final user = await (db.select(db.users)
+      // Use get() then check length to avoid StateError if multiple users have same PIN
+      final users = await (db.select(db.users)
             ..where((u) => u.pin.equals(hashed)))
-          .getSingleOrNull();
+          .get();
 
-      if (user != null) {
+      if (users.isNotEmpty) {
+        final user = users.first;
         await _prefs.saveSession(user.id, user.name, user.role);
         currentUserName.value = user.name;
         currentUserRole.value = user.role;
@@ -122,6 +125,7 @@ class AuthController extends GetxController {
         Get.snackbar('Error', 'Invalid PIN');
       }
     } catch (e) {
+      debugPrint('Login PIN Error: $e');
       Get.snackbar('Error', 'Login failed: $e');
     } finally {
       isLoading.value = false;
@@ -135,14 +139,16 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       final normalized = usernameOrEmail.trim().toLowerCase();
-      final username =
-          normalized.contains('@') ? normalized.split('@').first : normalized;
+      // More robust check: try both parts
+      final usernamePart = normalized.contains('@') ? normalized.split('@').first : normalized;
       final hashed = _hashSecret(password);
 
+      // Check for both full email/username or the split username
       final user = await (db.select(db.users)
             ..where(
               (u) =>
-                  u.username.equals(username) & u.passwordHash.equals(hashed),
+                  (u.username.equals(normalized) | u.username.equals(usernamePart)) & 
+                  u.passwordHash.equals(hashed),
             ))
           .getSingleOrNull();
 
@@ -157,6 +163,7 @@ class AuthController extends GetxController {
         Get.snackbar('Error', 'Invalid username or password');
       }
     } catch (e) {
+      debugPrint('Login Password Error: $e');
       Get.snackbar('Error', 'Login failed: $e');
     } finally {
       isLoading.value = false;

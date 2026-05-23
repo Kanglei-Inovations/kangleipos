@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
+import 'dart:math' as math;
 import '../../../core/theme/app_theme.dart';
 import '../../../database/database.dart';
 import '../controllers/pos_controller.dart';
 import '../models/cart_item.dart';
 
-// --- DESIGN SYSTEM CONSTANTS ---
-const Color posBgColor = Color(0xFFF5F7FB);
-const double posBorderRadius = 20.0;
-const double posPadding = 24.0;
+// --- DESIGN SYSTEM CONSTANTS (Matching Reference) ---
+const Color posBgColor = Color(0xFFF8F9FA);
+const Color posSurfaceColor = Colors.white;
+const Color posBorderColor = Color(0xFFE2E8F0);
+const Color posPrimaryBlue = Colors.blue;
 
-// --- PRODUCT CARD ---
+// --- PRODUCT CARD (MATCHING REFERENCE) ---
 class PosProductCard extends StatefulWidget {
   final Product product;
   final VoidCallback onTap;
@@ -28,130 +31,78 @@ class _PosProductCardState extends State<PosProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isOutOfStock = widget.product.stockQuantity <= 0;
+    final bool isOutOfStock = (widget.product.stockQuantity) <= 0;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: InkWell(
-          onTap: isOutOfStock ? null : widget.onTap,
-          borderRadius: BorderRadius.circular(posBorderRadius),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(posBorderRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF64748B).withValues(alpha: _isHovered ? 0.15 : 0.06),
-                  blurRadius: _isHovered ? 30 : 15,
-                  offset: Offset(0, _isHovered ? 12 : 6),
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: widget.product.imageUrl != null && widget.product.imageUrl!.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.network(
-                                    widget.product.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.inventory_2_outlined, size: 40, color: Colors.grey.shade400),
-                                  ),
-                                )
-                              : Icon(Icons.inventory_2_outlined, size: 40, color: Colors.grey.shade400),
-                        ),
-                        if (isOutOfStock)
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'OUT OF STOCK',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
-                              ),
-                            ),
+      child: InkWell(
+        onTap: isOutOfStock ? null : widget.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _isHovered ? posPrimaryBlue : Colors.grey.shade200),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Center(
+                  child: widget.product.imageUrl != null && widget.product.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            widget.product.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.image, size: 50, color: Colors.grey.shade300),
                           ),
-                      ],
-                    ),
-                  ),
+                        )
+                      : Icon(Icons.image, size: 50, color: Colors.grey.shade300),
                 ),
-                const SizedBox(height: 12),
-                // Product Info
-                Text(
-                  widget.product.name,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: const Color(0xFF1E293B),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Electronics', // Placeholder for category
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '₹${widget.product.price}',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.product.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                widget.product.description ?? "Standard Variant",
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "₹ ${NumberFormat('#,##,###.00').format(widget.product.price)}",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(radius: 4, backgroundColor: isOutOfStock ? Colors.red : Colors.green),
+                      const SizedBox(width: 4),
+                      Text(
+                        isOutOfStock ? "Out of Stock" : "In Stock",
+                        style: TextStyle(fontSize: 11, color: isOutOfStock ? Colors.red.shade700 : Colors.green.shade700),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: isOutOfStock ? Colors.red : Colors.green,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isOutOfStock ? 'No Stock' : 'In Stock',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: isOutOfStock ? Colors.red : Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                    ],
+                  ),
+                  Text(
+                    "${widget.product.stockQuantity.toInt()}",
+                    style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )
+            ],
           ),
         ),
       ),
@@ -159,169 +110,161 @@ class _PosProductCardState extends State<PosProductCard> {
   }
 }
 
-// --- CART ITEM TILE ---
+// --- CART ITEM ROW (MATCHING REFERENCE) ---
 class CartItemTile extends StatelessWidget {
   final CartItem item;
   final Function(int) onUpdateQuantity;
   final VoidCallback onDelete;
+  final int index;
 
   const CartItemTile({
     super.key,
     required this.item,
     required this.onUpdateQuantity,
     required this.onDelete,
+    required this.index,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          // Thumbnail
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
+          SizedBox(
+            width: 30,
+            child: Text(
+              "$index",
+              style: const TextStyle(color: Colors.black87, fontSize: 12),
             ),
-            child: const Icon(Icons.inventory_2_outlined, size: 20, color: Color(0xFF94A3B8)),
           ),
-          const SizedBox(width: 14),
-          // Product Info
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.product.name,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: const Color(0xFF1E293B),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '₹${item.product.price} / ${item.product.unit}',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Quantity Selector
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            flex: 3,
             child: Row(
               children: [
-                _QtyButton(icon: Icons.remove, onTap: () => onUpdateQuantity(-1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    '${item.quantity}',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(4),
                   ),
+                  child: item.product.imageUrl != null && item.product.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.network(item.product.imageUrl!, fit: BoxFit.cover),
+                        )
+                      : const Icon(Icons.smartphone, size: 20, color: Colors.grey),
                 ),
-                _QtyButton(icon: Icons.add, onTap: () => onUpdateQuantity(1)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.product.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        item.product.description ?? "Standard Variant",
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                )
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          // Total Price
-          SizedBox(
-            width: 70,
+          Expanded(
             child: Text(
-              '₹${item.total.toStringAsFixed(2)}',
-              textAlign: TextAlign.right,
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w800,
-                fontSize: 14,
-                color: const Color(0xFF1E293B),
-              ),
+              "₹ ${NumberFormat('#,##,###').format(item.product.price)}",
+              style: const TextStyle(fontSize: 12),
             ),
           ),
-          const SizedBox(width: 8),
-          // Delete
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFF43F5E), size: 20),
-            onPressed: onDelete,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          Expanded(
+            child: Row(
+              children: [
+                _qtyBtn(Icons.remove, () => onUpdateQuantity(-1)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    "${item.quantity}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+                _qtyBtn(Icons.add, () => onUpdateQuantity(1)),
+              ],
+            ),
           ),
+          Expanded(
+            child: Text(
+              "₹ ${NumberFormat('#,##,###.00').format(item.total)}",
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+          SizedBox(
+            width: 35,
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              onPressed: onDelete,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          )
         ],
       ),
     );
   }
-}
 
-class _QtyButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _QtyButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _qtyBtn(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 28,
-        height: 28,
-        alignment: Alignment.center,
-        child: Icon(icon, size: 14, color: const Color(0xFF1E293B)),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(icon, size: 14),
       ),
     );
   }
 }
 
-// --- SUMMARY ROW ---
-class SummaryRow extends StatelessWidget {
+// --- BILL SUMMARY ROW (MATCHING REFERENCE) ---
+class BillSummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isTotal;
   final bool isDiscount;
+  final bool isTax;
 
-  const SummaryRow({
+  const BillSummaryRow({
     super.key,
     required this.label,
     required this.value,
     this.isTotal = false,
     this.isDiscount = false,
+    this.isTax = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: isTotal ? 18 : 14,
-              fontWeight: isTotal ? FontWeight.w900 : FontWeight.w500,
-              color: isTotal ? const Color(0xFF1E293B) : const Color(0xFF64748B),
-            ),
-          ),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
           Text(
             value,
-            style: GoogleFonts.inter(
-              fontSize: isTotal ? 22 : 14,
-              fontWeight: FontWeight.w900,
-              color: isTotal 
-                  ? AppTheme.primaryColor 
-                  : (isDiscount ? const Color(0xFF10B981) : const Color(0xFF1E293B)),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: isDiscount ? Colors.green : Colors.black87,
             ),
           ),
         ],
@@ -330,7 +273,324 @@ class SummaryRow extends StatelessWidget {
   }
 }
 
-// --- CATEGORY CHIP ---
+// --- CUSTOMER SELECTOR (MATCHING REFERENCE) ---
+class CustomerSelector extends StatelessWidget {
+  final Customer? selectedCustomer;
+  final VoidCallback onAddCustomer;
+  final VoidCallback onTap;
+
+  const CustomerSelector({
+    super.key,
+    this.selectedCustomer,
+    required this.onAddCustomer,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade100,
+              child: Icon(Icons.person, color: Colors.blue.shade700),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    selectedCustomer?.name ?? 'Walk-in Customer',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  Text(
+                    selectedCustomer?.phone ?? 'Default',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down),
+            const SizedBox(width: 16),
+            InkWell(
+              onTap: onAddCustomer,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Icon(Icons.add, size: 20),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- SEARCH BAR (MATCHING REFERENCE) ---
+class PosSearchBar extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+  final VoidCallback onBarcodeTap;
+  final VoidCallback onFilterTap;
+
+  const PosSearchBar({
+    super.key, 
+    required this.onChanged, 
+    required this.onBarcodeTap,
+    required this.onFilterTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: "Scan barcode or search product...",
+              hintStyle: const TextStyle(fontSize: 14),
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: InkWell(onTap: onBarcodeTap, child: const Icon(Icons.qr_code_scanner)),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: [
+              Text("All Categories", style: TextStyle(fontSize: 14)),
+              Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        InkWell(
+          onTap: onFilterTap,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.filter_alt_outlined),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// --- INVOICE TAB (MATCHING REFERENCE) ---
+class PosInvoiceTab extends StatelessWidget {
+  final String label;
+  final String? badge;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const PosInvoiceTab({
+    super.key,
+    required this.label,
+    this.badge,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 24.0),
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(Icons.description_outlined,
+                color: isSelected ? Colors.blue : Colors.grey.shade600, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.blue : Colors.grey.shade800,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 8),
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: Colors.red,
+                child: Text(badge!,
+                    style: const TextStyle(fontSize: 10, color: Colors.white)),
+              )
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- CHECKOUT AREA (MATCHING REFERENCE) ---
+class CheckoutAction extends StatelessWidget {
+  final double amount;
+  final VoidCallback onTap;
+  final bool isLoading;
+  final double receivedAmount;
+
+  const CheckoutAction({
+    super.key,
+    required this.amount,
+    required this.onTap,
+    this.isLoading = false,
+    required this.receivedAmount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Received Amount", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  TextField(
+                    controller: TextEditingController(text: receivedAmount.toStringAsFixed(0)),
+                    onChanged: (v) {
+                      final pos = Get.find<PosController>();
+                      pos.receivedAmount.value = double.tryParse(v) ?? 0;
+                    },
+                    decoration: InputDecoration(
+                      prefixText: "₹ ",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text("Change to Return", style: TextStyle(fontSize: 12, color: Colors.green)),
+                    const SizedBox(height: 4),
+                    Text(
+                      "₹ ${NumberFormat('#,##,###.00').format(math.max(0.0, receivedAmount - amount))}",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: isLoading ? null : onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent.shade700,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: isLoading 
+              ? const CircularProgressIndicator(color: Colors.white)
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Pay / Checkout (F8)", style: TextStyle(fontSize: 18, color: Colors.white)),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, color: Colors.white),
+                  ],
+                ),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+// --- QUICK SHORTCUT ITEM (MATCHING REFERENCE) ---
+class QuickShortcutItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String shortcut;
+  final VoidCallback onTap;
+
+  const QuickShortcutItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.shortcut,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.blue, size: 24),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(shortcut,
+              style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
+// --- CATEGORY CHIP (MATCHING REFERENCE) ---
 class CategoryChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -346,333 +606,63 @@ class CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.only(right: 8.0),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? AppTheme.primaryColor : const Color(0xFFE2E8F0),
-            ),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ] : null,
+        child: Chip(
+          label: Text(label),
+          backgroundColor: isSelected ? Colors.blue : Colors.white,
+          labelStyle: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
           ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: isSelected ? Colors.white : const Color(0xFF64748B),
-            ),
-          ),
+          side: BorderSide(color: Colors.grey.shade300),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
   }
 }
 
-// --- PAYMENT CHIP ---
-class PaymentChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+// --- PAGINATION (MATCHING REFERENCE) ---
+class PosPagination extends StatelessWidget {
+  final int currentPage;
+  final int totalPages;
+  final Function(int) onPageChanged;
 
-  const PaymentChip({
+  const PosPagination({
     super.key,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-              color: isSelected ? Colors.white : const Color(0xFF64748B),
-            ),
-          ),
-        ),
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _pageNavBtn(Icons.chevron_left, currentPage > 1 ? () => onPageChanged(currentPage - 1) : null),
+        const SizedBox(width: 12),
+        Text("Page $currentPage of $totalPages", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+        const SizedBox(width: 12),
+        _pageNavBtn(Icons.chevron_right, currentPage < totalPages ? () => onPageChanged(currentPage + 1) : null),
+      ],
     );
   }
-}
 
-// --- SEARCH BAR ---
-class PosSearchBar extends StatelessWidget {
-  final ValueChanged<String> onChanged;
-  final VoidCallback onBarcodeTap;
-
-  const PosSearchBar({super.key, required this.onChanged, required this.onBarcodeTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              onChanged: onChanged,
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Scan barcode or search product...',
-                hintStyle: GoogleFonts.inter(
-                  color: const Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: onBarcodeTap,
-            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.primaryColor, size: 22),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- INVOICE TAB ---
-class PosInvoiceTab extends StatelessWidget {
-  final String label;
-  final int badgeCount;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const PosInvoiceTab({
-    super.key,
-    required this.label,
-    this.badgeCount = 0,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: isSelected ? const LinearGradient(
-              colors: [Color(0xFF4F46E5), Color(0xFF8B5CF6)],
-            ) : null,
-            color: isSelected ? null : Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: const Color(0xFF4F46E5).withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ] : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  color: isSelected ? Colors.white : const Color(0xFF64748B),
-                ),
-              ),
-              if (badgeCount > 0) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white.withOpacity(0.2) : const Color(0xFFF43F5E),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$badgeCount',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- CHECKOUT BUTTON ---
-class CheckoutButton extends StatefulWidget {
-  final double amount;
-  final VoidCallback onTap;
-  final bool isLoading;
-
-  const CheckoutButton({
-    super.key,
-    required this.amount,
-    required this.onTap,
-    this.isLoading = false,
-  });
-
-  @override
-  State<CheckoutButton> createState() => _CheckoutButtonState();
-}
-
-class _CheckoutButtonState extends State<CheckoutButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.01 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: InkWell(
-          onTap: widget.isLoading ? null : widget.onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 64,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF4F46E5).withValues(alpha: _isHovered ? 0.6 : 0.4),
-                  blurRadius: _isHovered ? 30 : 20,
-                  offset: Offset(0, _isHovered ? 10 : 8),
-                  spreadRadius: _isHovered ? 2 : 0,
-                )
-              ],
-            ),
-            child: Center(
-              child: widget.isLoading 
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'PAY / CHECKOUT (F8)',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
-                    ],
-                  ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- QUICK ACTION ITEM ---
-class QuickActionItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String shortcut;
-  final VoidCallback onTap;
-
-  const QuickActionItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.shortcut,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _pageNavBtn(IconData icon, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+          color: onTap == null ? Colors.grey.shade50 : Colors.white,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF1E293B)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF64748B)),
-            ),
-            Text(
-              shortcut,
-              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w900, color: AppTheme.primaryColor),
-            ),
-          ],
-        ),
+        child: Icon(icon, size: 18, color: onTap == null ? Colors.grey : Colors.black87),
       ),
     );
   }
