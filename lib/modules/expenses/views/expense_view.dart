@@ -29,7 +29,7 @@ class ExpenseView extends GetView<ExpenseController> {
             }
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -418,7 +418,7 @@ class _ExpenseTabs extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       child: Row(
         children: tabs.map((tab) {
           final isSelected = tab['label'] == 'All Expenses';

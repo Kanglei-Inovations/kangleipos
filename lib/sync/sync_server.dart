@@ -1,66 +1,193 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:uuid/uuid.dart';
+import '../database/database.dart';
 
 class SyncServerService extends GetxService {
   final Logger _logger = Logger();
   HttpServer? _server;
-  final List<WebSocket> _clients = [];
+  final List<WebSocket> _wsClients = [];
+  final RxBool isRunning = false.obs;
+  final RxString serverToken = ''.obs;
+  final RxString serverIp = ''.obs;
+  final RxInt serverPort = 8765.obs;
 
-  Future<void> startServer(int port) async {
+  static const int _port = 8765;
+
+  AppDatabase get _db => Get.find<AppDatabase>();
+
+  Future<SyncServerService> init() async {
+    await _detectIp();
+    serverToken.value = const Uuid().v4().substring(0, 8).toUpperCase();
+    return this;
+  }
+
+  Future<void> _detectIp() async {
     try {
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-      _logger.i('Sync Server running on ws://${_server!.address.address}:$port');
-
-      _server!.listen((HttpRequest request) {
-        if (WebSocketTransformer.isUpgradeRequest(request)) {
-          WebSocketTransformer.upgrade(request).then(_handleWebSocket);
-        } else {
-          request.response
-            ..statusCode = HttpStatus.forbidden
-            ..close();
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLoopback: false,
+      );
+      for (var iface in interfaces) {
+        for (var addr in iface.addresses) {
+          if (!addr.isLoopback) {
+            serverIp.value = addr.address;
+            return;
+          }
         }
-      });
+      }
+    } catch (_) {}
+    serverIp.value = '127.0.0.1';
+  }
+
+  /// QR payload that mobile scans
+  String get qrPayload => jsonEncode({
+    'ip': serverIp.value,
+    'port': _port,
+    'token': serverToken.value,
+  });
+
+  Future<void> startServer() async {
+    if (isRunning.value) return;
+    try {
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
+      isRunning.value = true;
+      _logger.i('Sync Server started on ${serverIp.value}:$_port token=${serverToken.value}');
+
+      _server!.listen(_handleRequest);
     } catch (e) {
       _logger.e('Failed to start Sync Server: $e');
     }
   }
 
-  void _handleWebSocket(WebSocket socket) {
-    _logger.i('New client connected');
-    _clients.add(socket);
+  Future<void> _handleRequest(HttpRequest req) async {
+    // CORS
+    req.response.headers.add('Access-Control-Allow-Origin', '*');
+    req.response.headers.add('Content-Type', 'application/json');
 
-    socket.listen(
-      (data) {
-        _logger.i('Received data: $data');
-        // Handle incoming delta sync payloads, resolve conflicts, and broadcast to other clients
-        _broadcast(data.toString(), exclude: socket);
-      },
-      onDone: () {
-        _logger.i('Client disconnected');
-        _clients.remove(socket);
-      },
-      onError: (error) {
-        _logger.e('WebSocket Error: $error');
-        _clients.remove(socket);
-      },
-    );
+    final token = req.headers.value('X-Sync-Token') ?? '';
+    if (token != serverToken.value) {
+      req.response.statusCode = 401;
+      req.response.write(jsonEncode({'error': 'Unauthorized'}));
+      await req.response.close();
+      return;
+    }
+
+    final path = req.uri.path;
+    final method = req.method;
+
+    try {
+      if (method == 'GET' && path == '/sync/all') {
+        await _handleFullSync(req);
+      } else if (method == 'POST' && path == '/sync/push') {
+        await _handlePush(req);
+      } else if (method == 'GET' && path == '/ping') {
+        req.response.write(jsonEncode({'status': 'ok', 'time': DateTime.now().toIso8601String()}));
+      } else {
+        req.response.statusCode = 404;
+        req.response.write(jsonEncode({'error': 'Not found'}));
+      }
+    } catch (e) {
+      req.response.statusCode = 500;
+      req.response.write(jsonEncode({'error': e.toString()}));
+    }
+    await req.response.close();
   }
 
-  void _broadcast(String message, {WebSocket? exclude}) {
-    for (var client in _clients) {
-      if (client != exclude) {
-        client.add(message);
+  Future<void> _handleFullSync(HttpRequest req) async {
+    final products = await _db.select(_db.products).get();
+    final suppliers = await _db.select(_db.suppliers).get();
+    final customers = await _db.select(_db.customers).get();
+    final purchases = await _db.select(_db.purchases).get();
+    final categories = await _db.select(_db.categories).get();
+    final brands = await _db.select(_db.brands).get();
+    final sales = await _db.select(_db.sales).get();
+
+    final payload = {
+      'products': products.map((p) => _productToMap(p)).toList(),
+      'suppliers': suppliers.map((s) => _supplierToMap(s)).toList(),
+      'customers': customers.map((c) => _customerToMap(c)).toList(),
+      'purchases': purchases.map((p) => _purchaseToMap(p)).toList(),
+      'categories': categories.map((c) => {'id': c.id, 'name': c.name}).toList(),
+      'brands': brands.map((b) => {'id': b.id, 'name': b.name}).toList(),
+      'sales': sales.map((s) => _saleToMap(s)).toList(),
+      'syncedAt': DateTime.now().toIso8601String(),
+    };
+
+    req.response.write(jsonEncode(payload));
+  }
+
+  Future<void> _handlePush(HttpRequest req) async {
+    final body = await utf8.decoder.bind(req).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    // Mobile pushed new purchases/sales → insert into desktop DB
+    if (data['purchases'] != null) {
+      for (final p in (data['purchases'] as List)) {
+        try {
+          await _db.into(_db.purchases).insertOnConflictUpdate(
+            PurchasesCompanion.insert(
+              id: p['id'],
+              purchaseNumber: p['purchaseNumber'],
+              supplierId: p['supplierId'],
+              grandTotal: (p['grandTotal'] as num).toDouble(),
+              status: p['status'],
+            ),
+          );
+        } catch (_) {}
       }
     }
+    if (data['sales'] != null) {
+      for (final s in (data['sales'] as List)) {
+        try {
+          await _db.into(_db.sales).insertOnConflictUpdate(
+            SalesCompanion.insert(
+              id: s['id'],
+              invoiceNumber: s['invoiceNumber'],
+              grandTotal: (s['grandTotal'] as num).toDouble(),
+              status: s['status'],
+            ),
+          );
+        } catch (_) {}
+      }
+    }
+    req.response.write(jsonEncode({'status': 'ok', 'received': DateTime.now().toIso8601String()}));
   }
+
+  Map<String, dynamic> _productToMap(Product p) => {
+    'id': p.id, 'name': p.name, 'barcode': p.barcode, 'sku': p.sku,
+    'price': p.price, 'costPrice': p.costPrice, 'mrp': p.mrp,
+    'stockQuantity': p.stockQuantity, 'unit': p.unit,
+    'gstRate': p.gstRate, 'hsnSac': p.hsnSac,
+    'categoryId': p.categoryId, 'brandId': p.brandId,
+  };
+
+  Map<String, dynamic> _supplierToMap(Supplier s) => {
+    'id': s.id, 'name': s.name, 'phone': s.phone, 'email': s.email,
+    'address': s.address, 'gstNumber': s.gstNumber, 'balanceDue': s.balanceDue,
+  };
+
+  Map<String, dynamic> _customerToMap(Customer c) => {
+    'id': c.id, 'name': c.name, 'phone': c.phone, 'email': c.email,
+    'address': c.address, 'loyaltyPoints': c.loyaltyPoints,
+  };
+
+  Map<String, dynamic> _purchaseToMap(Purchase p) => {
+    'id': p.id, 'purchaseNumber': p.purchaseNumber, 'supplierId': p.supplierId,
+    'grandTotal': p.grandTotal, 'status': p.status,
+    'purchaseDate': p.purchaseDate.toIso8601String(),
+  };
+
+  Map<String, dynamic> _saleToMap(Sale s) => {
+    'id': s.id, 'invoiceNumber': s.invoiceNumber,
+    'grandTotal': s.grandTotal, 'status': s.status,
+  };
 
   void stopServer() {
     _server?.close(force: true);
-    for (var client in _clients) {
-      client.close();
-    }
-    _clients.clear();
-    _logger.i('Sync Server stopped');
+    for (var ws in _wsClients) ws.close();
+    _wsClients.clear();
+    isRunning.value = false;
   }
 }

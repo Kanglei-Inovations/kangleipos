@@ -94,11 +94,11 @@ class _MainLayoutState extends State<MainLayout> {
                       child: KeyedSubtree(
                         key: ValueKey(widget.title),
                         child: Padding(
-                          padding: const EdgeInsets.only(
-                            left: 24,
-                            right: 24,
+                          padding: EdgeInsets.only(
+                            left: isMobile ? 12 : 24,
+                            right: isMobile ? 12 : 24,
                             top: 8,
-                            bottom: 20,
+                            bottom: isMobile ? 12 : 20,
                           ),
                           child: widget.child,
                         ),
@@ -613,9 +613,9 @@ class _MobileNavigation extends StatelessWidget {
     final currentRoute = Get.currentRoute;
     final destinations = [
       (Icons.dashboard_rounded, 'Dashboard', AppRoutes.DASHBOARD),
-      (Icons.point_of_sale_rounded, 'POS', AppRoutes.POS),
-      (Icons.inventory_2_rounded, 'Inventory', AppRoutes.INVENTORY),
-      (Icons.analytics_rounded, 'Reports', AppRoutes.REPORTS),
+      (Icons.point_of_sale_rounded, 'Selling', AppRoutes.POS),
+      (Icons.shopping_bag_rounded, 'Purchases', AppRoutes.PURCHASES),
+      (Icons.sync_rounded, 'Sync', AppRoutes.SYNC),
     ];
 
     return Padding(
@@ -634,10 +634,6 @@ class _MobileNavigation extends StatelessWidget {
                 selected: currentRoute == item.$3,
                 onTap: () {
                   if (currentRoute == item.$3) return;
-                  if (item.$3 == AppRoutes.REPORTS) {
-                    Get.snackbar('Reports', 'Reports module is coming soon');
-                    return;
-                  }
                   Get.offNamed(item.$3);
                 },
               ),

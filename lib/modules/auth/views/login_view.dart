@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -6,10 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../modules/sync/controllers/sync_controller.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends StatefulWidget {
@@ -139,7 +142,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                 child: SingleChildScrollView(
                   physics: (isDesktop || isLaptop) && screenHeight >= 720
                       ? const NeverScrollableScrollPhysics()
-                      : const BouncingScrollPhysics(),
+                      : const ClampingScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: screenHeight,
@@ -224,7 +227,10 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                     isLaptop: isLaptop,
                                   ),
                                 ),
-                              SizedBox(height: isDesktop ? (screenHeight < 800 ? 16 : 24) : 12),
+                              if (isMobile) ...[
+                                const SizedBox(height: 16),
+                                _MobileQrLoginButton(),
+                              ],
                               _FeatureCards(
                                 isMobile: isMobile,
                                 isTablet: isTablet,
@@ -1381,7 +1387,7 @@ class _LoginCard extends StatelessWidget {
                           : (screenHeight < 800 ? 300 : 340),
                   child: TabBarView(
                     controller: tabController,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     children: [
                       _PasswordTab(
                         formKey: formKey,
@@ -2741,6 +2747,152 @@ class _LoginFooter extends StatelessWidget {
             style: TextStyle(
               color: Colors.white.withOpacity(0.58),
               fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Mobile QR Login Button ────────────────────────────────
+class _MobileQrLoginButton extends StatelessWidget {
+  const _MobileQrLoginButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Expanded(child: Divider(color: Colors.white24)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text('or',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+            ),
+            const Expanded(child: Divider(color: Colors.white24)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _openQrScanner(context),
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+            label: const Text('Scan QR to Connect Desktop',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openQrScanner(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const _LoginQrScanPage()),
+    );
+  }
+}
+
+class _LoginQrScanPage extends StatefulWidget {
+  const _LoginQrScanPage();
+  @override
+  State<_LoginQrScanPage> createState() => _LoginQrScanPageState();
+}
+
+class _LoginQrScanPageState extends State<_LoginQrScanPage> {
+  bool _scanned = false;
+  final MobileScannerController _ctrl = MobileScannerController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) async {
+    if (_scanned) return;
+    for (final barcode in capture.barcodes) {
+      final raw = barcode.rawValue;
+      if (raw == null) continue;
+      try {
+        final data = jsonDecode(raw) as Map<String, dynamic>;
+        final ip = data['ip'] as String;
+        final port = data['port'] as int;
+        final token = data['token'] as String;
+
+        setState(() => _scanned = true);
+        await _ctrl.stop();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+
+        // Ensure SyncController is available
+        if (!Get.isRegistered<SyncController>()) Get.put(SyncController());
+        final syncCtrl = Get.find<SyncController>();
+
+        Get.snackbar('Connecting...', 'Syncing data from desktop, please wait...',
+            duration: const Duration(seconds: 3));
+
+        final success = await syncCtrl.connectAndSync(ip, port, token);
+        if (success) {
+          Get.offAllNamed('/dashboard');
+        } else {
+          Get.snackbar('Sync Failed',
+              'Could not connect. Make sure both devices are on the same WiFi network.',
+              backgroundColor: Colors.red.withValues(alpha: 0.9),
+              colorText: Colors.white);
+        }
+        return;
+      } catch (_) {
+        Get.snackbar('Invalid QR', 'This is not a valid Kanglei POS sync QR code.');
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('Scan Desktop QR',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(controller: _ctrl, onDetect: _onDetect),
+          Center(
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryColor, width: 3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                const Icon(Icons.qr_code_rounded, color: Colors.white54, size: 32),
+                const SizedBox(height: 12),
+                Text(
+                  'Point camera at the QR code\non your desktop Kanglei POS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                ),
+              ],
             ),
           ),
         ],

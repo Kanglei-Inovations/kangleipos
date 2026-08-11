@@ -29,7 +29,7 @@ class ReportsView extends GetView<ReportsController> {
             }
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Row(

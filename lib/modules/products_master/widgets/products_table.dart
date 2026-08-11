@@ -43,10 +43,10 @@ class ProductsTable extends StatelessWidget {
                 return Obx(() {
                   final paginatedProducts = controller.paginatedProducts;
                   return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
+                      physics: const ClampingScrollPhysics(),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(minWidth: constraints.maxWidth),
                         child: DataTable(

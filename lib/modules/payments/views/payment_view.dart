@@ -48,7 +48,7 @@ class PaymentView extends GetView<PaymentController> {
             }
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Column(

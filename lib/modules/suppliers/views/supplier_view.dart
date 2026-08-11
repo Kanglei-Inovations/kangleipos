@@ -29,7 +29,7 @@ class SupplierView extends GetView<SupplierController> {
             }
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

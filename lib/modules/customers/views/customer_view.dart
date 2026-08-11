@@ -29,7 +29,7 @@ class CustomerView extends GetView<CustomerController> {
             }
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

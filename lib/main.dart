@@ -14,6 +14,8 @@ import 'core/services/preference_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'database/database.dart';
+import 'sync/sync_server.dart';
+import 'sync/sync_client.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,11 @@ void main() async {
     // Add listener to save window size changes
     windowManager.addListener(_WindowSizeListener(prefService));
   }
+
+  // Init Sync Services
+  final syncServer = await SyncServerService().init();
+  Get.put<SyncServerService>(syncServer, permanent: true);
+  Get.put<SyncClientService>(SyncClientService(), permanent: true);
 
   ResponsiveSizingConfig.instance.setCustomBreakpoints(
     const ScreenBreakpoints(desktop: 1024, tablet: 768, watch: 200),

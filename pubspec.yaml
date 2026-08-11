@@ -56,6 +56,12 @@ dependencies:
   responsive_framework: ^1.5.1
   provider: ^6.1.5+1
   flutter_animate: ^4.5.2
+  
+  # Sync & Networking
+  http: ^1.2.0
+  network_info_plus: ^5.0.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
 
 dev_dependencies:
   flutter_test:

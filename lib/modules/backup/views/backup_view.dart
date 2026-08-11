@@ -36,7 +36,7 @@ class BackupViewContent extends StatelessWidget {
         final isDesktop = width >= 1280;
 
         return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

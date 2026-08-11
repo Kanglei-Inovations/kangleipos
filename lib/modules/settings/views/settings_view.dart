@@ -80,7 +80,7 @@ class _SettingsViewState extends State<SettingsView> {
       case 'Business Settings':
       default:
         return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: Column(
             children: [
               const _BusinessProfileCard(),

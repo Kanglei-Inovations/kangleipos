@@ -43,7 +43,7 @@ class UserViewContent extends StatelessWidget {
           }
 
           return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

@@ -55,7 +55,7 @@ class SalesView extends GetView<SalesController> {
     return LayoutBuilder(builder: (context, constraints) {
       if (constraints.maxWidth < 1200) {
         return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: Column(
             children: [
               _RecentInvoicesTable(),
@@ -88,7 +88,7 @@ class SalesView extends GetView<SalesController> {
           SizedBox(
             width: 360,
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: Column(
                 children: [
                   _SalesByCategoryPanel(),
@@ -288,10 +288,10 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                   return const Center(child: Text('No sales found matching filters.'));
                 }
                 return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(minWidth: constraints.maxWidth - 24),
                       child: DataTable(

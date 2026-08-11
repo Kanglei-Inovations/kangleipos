@@ -68,7 +68,7 @@ class Sidebar extends StatelessWidget {
                     ScrollConfiguration.of(context).copyWith(scrollbars: false),
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   itemCount: _menuItems.length,
                   itemBuilder: (context, index) {
                     final item = _menuItems[index];

@@ -27,10 +27,10 @@ class BrandsTable extends StatelessWidget {
           ),
           Expanded(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(theme.dividerColor.withOpacity(0.05)),
                   columns: const [

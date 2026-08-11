@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/sync_controller.dart';
@@ -23,102 +27,522 @@ class SyncViewContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<SyncController>()) {
-      Get.put(SyncController());
-    }
+    if (!Get.isRegistered<SyncController>()) Get.put(SyncController());
+    final controller = Get.find<SyncController>();
+    final isDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final isDesktop = width >= 1280;
-
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _SyncKpiGrid(width: width),
-              const SizedBox(height: 18),
-              if (isDesktop)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 7, child: _MainSyncContent()),
-                    const SizedBox(width: 18),
-                    const Expanded(flex: 3, child: _SyncRightRail()),
-                  ],
-                )
-              else
-                Column(
-                  children: [
-                    _MainSyncContent(),
-                    const SizedBox(height: 18),
-                    const _SyncRightRail(),
-                  ],
-                ),
-              const SizedBox(height: 18),
-              const _SyncInfoBanner(),
-              const SizedBox(height: 24),
-            ],
-          ),
-        );
-      },
-    );
+    return isDesktop
+        ? const _DesktopSyncView()
+        : const _MobileSyncView();
   }
 }
 
-class _SyncKpiGrid extends StatelessWidget {
-  final double width;
-  const _SyncKpiGrid({required this.width});
+// ─────────────────────────────────────────────────────────
+// DESKTOP: Shows QR code + server controls
+// ─────────────────────────────────────────────────────────
+class _DesktopSyncView extends GetView<SyncController> {
+  const _DesktopSyncView();
 
   @override
   Widget build(BuildContext context) {
-    final columns = width >= 1100 ? 5 : (width >= 700 ? 3 : 2);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: columns,
-      crossAxisSpacing: 14,
-      mainAxisSpacing: 14,
-      mainAxisExtent: 110,
-      children: const [
-        _SyncKpiCard(title: 'Overall Sync Status', value: 'Synced', sub: 'All data is up to date', icon: Icons.check_circle_outline, color: Colors.green),
-        _SyncKpiCard(title: 'Last Successful Sync', value: '10:30 AM', sub: '2 minutes ago', icon: Icons.schedule_outlined, color: Colors.blue),
-        _SyncKpiCard(title: 'Pending Changes', value: '0', sub: 'No pending changes', icon: Icons.sync_problem_outlined, color: Colors.orange),
-        _SyncKpiCard(title: 'Devices Connected', value: '3', sub: 'Active devices', icon: Icons.devices_outlined, color: Colors.indigo),
-        _SyncKpiCard(title: 'Auto Sync', value: 'Enabled', sub: 'Every 15 minutes', icon: Icons.autorenew_outlined, color: Colors.teal),
-      ],
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header info
+          _SyncKpiRow(),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // QR Panel
+              Expanded(
+                flex: 4,
+                child: GlassPanel(
+                  borderRadius: BorderRadius.circular(24),
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text('Connect Mobile Device',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 8),
+                      Text('Scan this QR code from the Kanglei POS mobile app to sync data.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: isDark ? Colors.white54 : Colors.black45)),
+                      const SizedBox(height: 24),
+                      Obx(() {
+                        if (!controller.isServerRunning.value) {
+                          return Column(
+                            children: [
+                              Icon(Icons.wifi_off_rounded, size: 64,
+                                  color: isDark ? Colors.white30 : Colors.black26),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: controller.startDesktopServer,
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Start Sync Server'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24, vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 8),
+                                  )
+                                ],
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: QrImageView(
+                                data: controller.qrData.value,
+                                version: QrVersions.auto,
+                                size: 240,
+                                eyeStyle: const QrEyeStyle(
+                                    eyeShape: QrEyeShape.square,
+                                    color: Color(0xFF1E293B)),
+                                dataModuleStyle: const QrDataModuleStyle(
+                                    dataModuleShape: QrDataModuleShape.square,
+                                    color: Color(0xFF1E293B)),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.circle,
+                                      size: 8, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Text('Server running on ${controller.localIp.value}:8765',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.green)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text('Token: ${controller.serverToken.value}',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white38 : Colors.black38,
+                                    letterSpacing: 2)),
+                            const SizedBox(height: 16),
+                            OutlinedButton.icon(
+                              onPressed: controller.stopDesktopServer,
+                              icon: const Icon(Icons.stop_rounded,
+                                  color: Colors.red),
+                              label: const Text('Stop Server',
+                                  style: TextStyle(color: Colors.red)),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              // Instructions + Status
+              Expanded(
+                flex: 6,
+                child: Column(
+                  children: [
+                    _HowToConnectCard(),
+                    const SizedBox(height: 16),
+                    _SyncStatusCard(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _SyncKpiCard extends StatelessWidget {
-  final String title, value, sub;
-  final IconData icon;
-  final Color color;
+// ─────────────────────────────────────────────────────────
+// MOBILE: Shows QR scanner + sync status
+// ─────────────────────────────────────────────────────────
+class _MobileSyncView extends GetView<SyncController> {
+  const _MobileSyncView();
 
-  const _SyncKpiCard({required this.title, required this.value, required this.sub, required this.icon, required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _MobileSyncStatusCard(),
+          const SizedBox(height: 16),
+          _MobileQrScanCard(),
+          const SizedBox(height: 16),
+          _MobileSyncActions(),
+        ],
+      ),
+    );
+  }
+}
 
+class _MobileSyncStatusCard extends GetView<SyncController> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(20),
+      child: Obx(() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: controller.isConnected.value
+                      ? Colors.green.withValues(alpha: 0.15)
+                      : Colors.orange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  controller.isConnected.value
+                      ? Icons.wifi_rounded
+                      : Icons.wifi_off_rounded,
+                  color: controller.isConnected.value ? Colors.green : Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.isConnected.value ? 'Connected to Desktop' : 'Not Connected',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      'Last sync: ${controller.lastSyncTime.value}',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textTheme.bodySmall?.color),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (controller.isSyncing.value) ...[
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: controller.syncProgress.value,
+              backgroundColor: Colors.grey.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 8),
+            Text(controller.syncStatus.value,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          ] else if (controller.syncStatus.value.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(controller.syncStatus.value,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: controller.syncStatus.value.contains('✅')
+                        ? Colors.green
+                        : null)),
+          ],
+        ],
+      )),
+    );
+  }
+}
+
+class _MobileQrScanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: 44, height: 44, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 22)),
-          const SizedBox(width: 14),
-          Expanded(
+          const Text('Connect to Desktop',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('Scan the QR code shown on your desktop Kanglei POS app',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _openScanner(context),
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text('Scan QR Code'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openScanner(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => const _QrScannerPage(),
+    ));
+  }
+}
+
+class _MobileSyncActions extends GetView<SyncController> {
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Sync Actions',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          _SyncActionTile(
+            icon: Icons.download_rounded,
+            title: 'Pull from Desktop',
+            subtitle: 'Download all products, suppliers, purchases',
+            color: Colors.blue,
+            onTap: () => controller.syncNow(),
+          ),
+          const SizedBox(height: 12),
+          _SyncActionTile(
+            icon: Icons.upload_rounded,
+            title: 'Push to Desktop',
+            subtitle: 'Upload mobile sales & purchases to desktop',
+            color: Colors.green,
+            onTap: () => controller.pushToDesktop([], []),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SyncActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SyncActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: color)),
+                  Text(subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// QR Scanner Page (mobile only)
+// ─────────────────────────────────────────────────────────
+class _QrScannerPage extends StatefulWidget {
+  const _QrScannerPage();
+
+  @override
+  State<_QrScannerPage> createState() => _QrScannerPageState();
+}
+
+class _QrScannerPageState extends State<_QrScannerPage> {
+  bool _scanned = false;
+  final MobileScannerController _scannerCtrl = MobileScannerController();
+
+  @override
+  void dispose() {
+    _scannerCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) async {
+    if (_scanned) return;
+    final barcodes = capture.barcodes;
+    for (final barcode in barcodes) {
+      final raw = barcode.rawValue;
+      if (raw == null) continue;
+      try {
+        final data = jsonDecode(raw) as Map<String, dynamic>;
+        final ip = data['ip'] as String;
+        final port = data['port'] as int;
+        final token = data['token'] as String;
+
+        setState(() => _scanned = true);
+        await _scannerCtrl.stop();
+
+        if (!mounted) return;
+        Navigator.of(context).pop();
+
+        // Connect and sync
+        final controller = Get.find<SyncController>();
+        final success = await controller.connectAndSync(ip, port, token);
+
+        if (success) {
+          Get.snackbar(
+            '✅ Sync Complete',
+            'Successfully connected to desktop and synced all data!',
+            backgroundColor: Colors.green.withValues(alpha: 0.9),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 4),
+          );
+          // Navigate to dashboard
+          Get.offAllNamed('/dashboard');
+        } else {
+          Get.snackbar(
+            '❌ Sync Failed',
+            'Could not connect to desktop. Make sure both devices are on the same WiFi.',
+            backgroundColor: Colors.red.withValues(alpha: 0.9),
+            colorText: Colors.white,
+          );
+        }
+        return;
+      } catch (e) {
+        Get.snackbar('Invalid QR', 'This QR code is not a valid sync code.');
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('Scan Desktop QR',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flash_on_rounded, color: Colors.white),
+            onPressed: () => _scannerCtrl.toggleTorch(),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _scannerCtrl,
+            onDetect: _onDetect,
+          ),
+          // Overlay
+          Center(
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey)),
-                const SizedBox(height: 2),
-                Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color == Colors.green ? Colors.green : null)),
-                const SizedBox(height: 2),
-                Text(sub, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w600)),
+              children: const [
+                Icon(Icons.qr_code_scanner_rounded,
+                    color: Colors.white54, size: 32),
+                SizedBox(height: 12),
+                Text(
+                  'Point camera at the QR code\nshown on your desktop',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
               ],
             ),
           ),
@@ -128,348 +552,183 @@ class _SyncKpiCard extends StatelessWidget {
   }
 }
 
-class _MainSyncContent extends StatelessWidget {
+// ─────────────────────────────────────────────────────────
+// Shared sub-widgets
+// ─────────────────────────────────────────────────────────
+class _SyncKpiRow extends GetView<SyncController> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _SyncTabs(),
-        const SizedBox(height: 18),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Expanded(flex: 3, child: _DataModulesStatus()),
-            const SizedBox(width: 18),
-            Expanded(flex: 7, child: _RecentSyncActivity()),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _SyncConflictsPanel(),
-      ],
-    );
+    return Obx(() {
+      final stats = [
+        _KpiData('Server', controller.isServerRunning.value ? 'Running' : 'Stopped',
+            Icons.dns_rounded, controller.isServerRunning.value ? Colors.green : Colors.grey),
+        _KpiData('IP Address', controller.localIp.value.isEmpty ? '...' : controller.localIp.value,
+            Icons.router_rounded, Colors.blue),
+        _KpiData('Port', '8765', Icons.lan_rounded, Colors.purple),
+        _KpiData('Last Sync', controller.lastSyncTime.value,
+            Icons.history_rounded, Colors.orange),
+      ];
+
+      return GridView.count(
+        shrinkWrap: true,
+        crossAxisCount: 4,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 14,
+        childAspectRatio: 2.8,
+        children: stats.map((s) => _KpiCard(data: s)).toList(),
+      );
+    });
   }
 }
 
-class _SyncTabs extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final tabs = ['Sync Overview', 'Data Status', 'Devices', 'Sync History', 'Conflict Resolution', 'Settings'];
-    return Row(
-      children: tabs.map((tab) {
-        final isSelected = tab == 'Sync Overview';
-        return Container(
-          margin: const EdgeInsets.only(right: 24),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isSelected ? const Color(0xFF4F46E5) : Colors.transparent, width: 2))),
-          child: Text(tab, style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600, color: isSelected ? const Color(0xFF4F46E5) : Colors.grey, fontSize: 13)),
-        );
-      }).toList(),
-    );
-  }
+class _KpiData {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  const _KpiData(this.title, this.value, this.icon, this.color);
 }
 
-class _DataModulesStatus extends StatelessWidget {
-  const _DataModulesStatus();
+class _KpiCard extends StatelessWidget {
+  final _KpiData data;
+  const _KpiCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
     return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
+      borderRadius: BorderRadius.circular(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(data.icon, color: data.color, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(data.title,
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600)),
+                Text(data.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HowToConnectCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final steps = [
+      ('1', 'Open Kanglei POS on your Android phone'),
+      ('2', 'On the login screen, tap "Scan QR to Connect"'),
+      ('3', 'Point your camera at the QR code on the left'),
+      ('4', 'Data will sync automatically and the app will open'),
+    ];
+
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Data Modules Status', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-          const SizedBox(height: 20),
-          const _ModuleItem(label: 'Sales', status: 'Synced'),
-          const _ModuleItem(label: 'Purchases', status: 'Synced'),
-          const _ModuleItem(label: 'Inventory', status: 'Synced'),
-          const _ModuleItem(label: 'Customers', status: 'Synced'),
-          const _ModuleItem(label: 'Suppliers', status: 'Synced'),
-          const _ModuleItem(label: 'Products', status: 'Synced'),
-          const _ModuleItem(label: 'Expenses', status: 'Synced'),
-          const _ModuleItem(label: 'GST / Tax', status: 'Synced'),
-          const _ModuleItem(label: 'Users & Roles', status: 'Synced'),
-          const _ModuleItem(label: 'Settings', status: 'Synced'),
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: Color(0xFF4F46E5)))), child: const Text('View Data Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
+          const Text('How to Connect Mobile',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          ...steps.map((s) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(s.$1,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(s.$2,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          )),
         ],
       ),
     );
   }
 }
 
-class _ModuleItem extends StatelessWidget {
-  final String label, status;
-  const _ModuleItem({required this.label, required this.status});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          Icon(Icons.description_outlined, size: 16, color: Colors.grey.withOpacity(0.8)),
-          const SizedBox(width: 12),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
-          const Icon(Icons.check_circle, size: 14, color: Colors.green),
-          const SizedBox(width: 6),
-          Text(status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecentSyncActivity extends StatelessWidget {
-  const _RecentSyncActivity();
-
+class _SyncStatusCard extends GetView<SyncController> {
   @override
   Widget build(BuildContext context) {
     return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(24),
+      child: Obx(() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Expanded(child: Text('Recent Sync Activity', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
-              const Icon(Icons.refresh_rounded, color: Colors.grey, size: 20),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: const [
-              Expanded(flex: 2, child: Text('Time', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 3, child: Text('Device / Location', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 2, child: Text('Status', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 3, child: Text('Details', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 2, child: Text('Records', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 2, child: Text('Duration', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const _SyncRow(time: '10:30 AM', device: 'Main Store (This Device)', status: 'Success', details: 'All data synchronized', records: '1,256', duration: '00:00:24'),
-          const _SyncRow(time: '10:15 AM', device: 'Warehouse', status: 'Success', details: 'All data synchronized', records: '842', duration: '00:00:18'),
-          const _SyncRow(time: '10:00 AM', device: 'Branch Office', status: 'Success', details: 'All data synchronized', records: '1,105', duration: '00:00:21'),
-          const _SyncRow(time: '09:45 AM', device: 'Main Store (This Device)', status: 'Success', details: 'All data synchronized', records: '1,023', duration: '00:00:17'),
-          const _SyncRow(time: '09:30 AM', device: 'Warehouse', status: 'Success', details: 'All data synchronized', records: '754', duration: '00:00:16'),
-          const SizedBox(height: 12),
-          Center(child: TextButton(onPressed: () {}, child: const Text('View All Activity →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)))),
+          const Text('Sync Status',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          _StatusRow('Server', controller.isServerRunning.value ? 'Online' : 'Offline',
+              controller.isServerRunning.value ? Colors.green : Colors.grey),
+          _StatusRow('Connected Devices', '0', Colors.blue),
+          _StatusRow('Last Sync', controller.lastSyncTime.value, Colors.orange),
         ],
-      ),
+      )),
     );
   }
 }
 
-class _SyncRow extends StatelessWidget {
-  final String time, device, status, details, records, duration;
-  const _SyncRow({required this.time, required this.device, required this.status, required this.details, required this.records, required this.duration});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.05)))),
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: Text(time, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey))),
-          Expanded(flex: 3, child: Text(device, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Text(status, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.green))))),
-          Expanded(flex: 3, child: Text(details, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey))),
-          Expanded(flex: 2, child: Text(records, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-          Expanded(flex: 2, child: Text(duration, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey))),
-        ],
-      ),
-    );
-  }
-}
-
-class _SyncConflictsPanel extends StatelessWidget {
-  const _SyncConflictsPanel();
-  @override
-  Widget build(BuildContext context) {
-    return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Text('Sync Conflicts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              const SizedBox(width: 8),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)), child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: const [
-              Expanded(flex: 2, child: Text('Type', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 2, child: Text('Module', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 3, child: Text('Record', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 4, child: Text('Conflict', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              Expanded(flex: 3, child: Text('Detected On', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-              SizedBox(width: 80, child: Text('Action', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey))),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const _ConflictRow(type: 'Update Conflict', module: 'Sales', record: 'Invoice #INV-10056', conflict: 'Record modified on multiple devices', date: 'May 24, 2025 10:28 AM'),
-          const _ConflictRow(type: 'Delete Conflict', module: 'Product', record: 'Wireless Mouse', conflict: 'Record deleted on one device', date: 'May 24, 2025 10:20 AM'),
-          const SizedBox(height: 12),
-          TextButton(onPressed: () {}, child: const Text('View All Conflicts →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800))),
-        ],
-      ),
-    );
-  }
-}
-
-class _ConflictRow extends StatelessWidget {
-  final String type, module, record, conflict, date;
-  const _ConflictRow({required this.type, required this.module, required this.record, required this.conflict, required this.date});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.05)))),
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: Text(type, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.orange))),
-          Expanded(flex: 2, child: Text(module, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
-          Expanded(flex: 3, child: Text(record, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
-          Expanded(flex: 4, child: Text(conflict, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey))),
-          Expanded(flex: 3, child: Text(date, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey))),
-          SizedBox(width: 80, child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF4F46E5), elevation: 0, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Color(0xFF4F46E5)))), child: const Text('Resolve', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)))),
-        ],
-      ),
-    );
-  }
-}
-
-class _SyncRightRail extends StatelessWidget {
-  const _SyncRightRail();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        _ConnectedDevicesPanel(),
-        SizedBox(height: 18),
-        _SyncQuickActions(),
-      ],
-    );
-  }
-}
-
-class _ConnectedDevicesPanel extends StatelessWidget {
-  const _ConnectedDevicesPanel();
-  @override
-  Widget build(BuildContext context) {
-    return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Expanded(child: Text('Connected Devices', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
-              TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800))),
-            ],
-          ),
-          const SizedBox(height: 18),
-          const _DeviceItem(name: 'Main Store (This Device)', ip: 'Windows • 192.168.1.10', isCurrent: true),
-          const _DeviceItem(name: 'Warehouse', ip: 'Windows • 192.168.1.20'),
-          const _DeviceItem(name: 'Branch Office', ip: 'Android • 192.168.1.30'),
-        ],
-      ),
-    );
-  }
-}
-
-class _DeviceItem extends StatelessWidget {
-  final String name, ip;
-  final bool isCurrent;
-  const _DeviceItem({required this.name, required this.ip, this.isCurrent = false});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(width: 36, height: 36, decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.laptop_mac_outlined, size: 18, color: Colors.green)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)), Text(ip, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600))])),
-          if (isCurrent) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(6)), child: const Text('Current', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.blue))),
-        ],
-      ),
-    );
-  }
-}
-
-class _SyncQuickActions extends StatelessWidget {
-  const _SyncQuickActions();
-  @override
-  Widget build(BuildContext context) {
-    return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('Quick Actions', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-          const SizedBox(height: 18),
-          const _QuickActionBtn(label: 'Sync Now', sub: 'Synchronize all data immediately', icon: Icons.sync_rounded, color: Colors.blue),
-          const _QuickActionBtn(label: 'Resolve Conflicts', sub: 'View and resolve sync conflicts', icon: Icons.error_outline, color: Colors.orange),
-          const _QuickActionBtn(label: 'Device Management', sub: 'Manage connected devices', icon: Icons.devices_outlined, color: Colors.indigo),
-          const _QuickActionBtn(label: 'Sync Settings', sub: 'Configure sync preferences', icon: Icons.settings_outlined, color: Colors.purple),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActionBtn extends StatelessWidget {
-  final String label, sub;
-  final IconData icon;
+class _StatusRow extends StatelessWidget {
+  final String label;
+  final String value;
   final Color color;
-  const _QuickActionBtn({required this.label, required this.sub, required this.icon, required this.color});
+
+  const _StatusRow(this.label, this.value, this.color);
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.1))),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)), Text(sub, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600))])),
-              const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SyncInfoBanner extends StatelessWidget {
-  const _SyncInfoBanner();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.blue.withOpacity(0.1))),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Icon(Icons.info_outline, color: Colors.blue, size: 24),
-          const SizedBox(width: 16),
-          const Expanded(child: Text('Keep your data synchronized. Sync Center helps keep all your devices and locations up to date. Ensure internet connection for smooth synchronization.', style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w600, height: 1.4))),
-          const SizedBox(width: 16),
-          ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.blue, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Learn More', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800))),
+          Text(label,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color)),
+          ),
         ],
       ),
     );

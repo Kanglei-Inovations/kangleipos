@@ -17,18 +17,18 @@ class PurchaseView extends GetView<PurchaseController> {
   Widget build(BuildContext context) {
     return MainLayout(
       title: 'Purchases',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isDesktop = width >= 1280;
-
-          return Obx(() {
-            if (controller.isLoading.value && controller.purchaseHistory.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      child: Obx(() {
+        final ctrl = Get.find<PurchaseController>();
+        if (ctrl.isLoading.value && ctrl.purchaseHistory.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final isDesktop = width >= 1280;
 
             return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               child: isDesktop
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,13 +65,11 @@ class PurchaseView extends GetView<PurchaseController> {
                       ],
                     ),
             );
-          });
-        },
-      ),
+          },
+        );
+      }),
     );
   }
-
-
 }
 
 class _PurchaseKpiGrid extends GetView<PurchaseController> {
@@ -83,7 +81,7 @@ class _PurchaseKpiGrid extends GetView<PurchaseController> {
   Widget build(BuildContext context) {
     final columns = width >= 1180
         ? 4
-        : width >= 860
+        : width >= 640
             ? 2
             : 1;
 
@@ -511,57 +509,75 @@ class _PurchaseTable extends GetView<PurchaseController> {
 
     final columns = ['Invoice No.', 'Supplier', 'Date', 'Total Amount', 'Paid Amount', 'Due Amount', 'Status', 'Actions'];
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9))),
-          ),
-            child: Row(
-              children: columns.map((col) {
-                return Expanded(
-                  flex: col == 'Supplier' ? 3 : 2,
-                  child: Text(
-                    col,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: muted),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          Obx(() {
-            final purchases = controller.paginatedPurchases;
-            if (purchases.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(
-                  child: Text(
-                    'No purchase orders found',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minTableWidth = 860.0;
+        final tableWidth = constraints.maxWidth < minTableWidth ? minTableWidth : constraints.maxWidth;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9))),
+                      ),
+                      child: Row(
+                        children: columns.map((col) {
+                          return Expanded(
+                            flex: col == 'Supplier' ? 3 : 2,
+                            child: Text(
+                              col,
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: muted),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    Obx(() {
+                      final purchases = controller.paginatedPurchases;
+                      if (purchases.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(
+                            child: Text(
+                              'No purchase orders found',
+                              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: purchases.length,
+                        itemBuilder: (context, index) {
+                          return _PurchaseRow(purchase: purchases[index], tableWidth: tableWidth);
+                        },
+                      );
+                    }),
+                  ],
                 ),
-              );
-            }
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: purchases.length,
-              itemBuilder: (context, index) {
-                return _PurchaseRow(purchase: purchases[index]);
-              },
-            );
-          }),
-          const _TablePagination(),
-        ],
-      );
+              ),
+            ),
+            const _TablePagination(),
+          ],
+        );
+      },
+    );
   }
 }
 
 class _PurchaseRow extends GetView<PurchaseController> {
   final Purchase purchase;
+  final double tableWidth;
 
-  const _PurchaseRow({required this.purchase});
+  const _PurchaseRow({required this.purchase, this.tableWidth = 860});
 
   @override
   Widget build(BuildContext context) {

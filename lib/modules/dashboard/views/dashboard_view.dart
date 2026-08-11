@@ -24,7 +24,7 @@ class DashboardView extends GetView<DashboardController> {
           final isDesktop = width >= 1280;
 
           return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: isDesktop
                 ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,6 +45,7 @@ class DashboardView extends GetView<DashboardController> {
           );
         },
       ),
+
     );
   }
 }

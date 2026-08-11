@@ -77,14 +77,14 @@ class ProductsMasterPage extends GetView<ProductsMasterController> {
                     SizedBox(
                       width: 340,
                       child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
+                        physics: const ClampingScrollPhysics(),
                         child: _buildRightSidebar(context),
                       ),
                     ),
                   ],
                 )
               : SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   child: Column(
                     children: [
                       _buildMainTableSection(context),
