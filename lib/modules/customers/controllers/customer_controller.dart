@@ -81,4 +81,16 @@ class CustomerController extends GetxController {
   Future<List<Invoice>> getCustomerInvoices(String customerId) async {
     return await (db.select(db.invoices)..where((t) => t.customerId.equals(customerId))).get();
   }
+
+  Future<void> receivePayment(String customerId, double amount, String paymentMethod) async {
+    final customer = customers.firstWhereOrNull((c) => c.id == customerId);
+    if (customer == null) return;
+
+    final newBalance = (customer.balanceDue - amount).clamp(0.0, double.infinity);
+    await (db.update(db.customers)..where((t) => t.id.equals(customerId))).write(
+      CustomersCompanion(balanceDue: d.Value(newBalance)),
+    );
+    await refreshData();
+    Get.snackbar('Payment Recorded', 'Received ₹${amount.toStringAsFixed(2)} from ${customer.name}');
+  }
 }

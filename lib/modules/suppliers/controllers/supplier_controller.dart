@@ -76,4 +76,16 @@ class SupplierController extends GetxController {
     await (db.delete(db.suppliers)..where((t) => t.id.equals(id))).go();
     await refreshData();
   }
+
+  Future<void> paySupplier(String supplierId, double amount, String paymentMethod) async {
+    final supplier = suppliers.firstWhereOrNull((s) => s.id == supplierId);
+    if (supplier == null) return;
+
+    final newBalance = (supplier.balanceDue - amount).clamp(0.0, double.infinity);
+    await (db.update(db.suppliers)..where((t) => t.id.equals(supplierId))).write(
+      SuppliersCompanion(balanceDue: d.Value(newBalance)),
+    );
+    await refreshData();
+    Get.snackbar('Payment Sent', 'Paid ₹${amount.toStringAsFixed(2)} to ${supplier.name}');
+  }
 }

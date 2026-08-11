@@ -13,11 +13,13 @@ import 'sidebar.dart';
 class MainLayout extends StatefulWidget {
   final Widget child;
   final String title;
+  final Widget? headerAction;
 
   const MainLayout({
     super.key,
     required this.child,
     required this.title,
+    this.headerAction,
   });
 
   @override
@@ -72,6 +74,7 @@ class _MainLayoutState extends State<MainLayout> {
                     title: widget.title,
                     isMobile: isMobile,
                     isTablet: isTablet,
+                    headerAction: widget.headerAction,
                     onMenuPressed: isTablet
                         ? () => Scaffold.of(context).openDrawer()
                         : null,
@@ -117,12 +120,14 @@ class _PremiumHeader extends StatelessWidget {
   final bool isMobile;
   final bool isTablet;
   final VoidCallback? onMenuPressed;
+  final Widget? headerAction;
 
   const _PremiumHeader({
     required this.title,
     required this.isMobile,
     required this.isTablet,
     this.onMenuPressed,
+    this.headerAction,
   });
 
   @override
@@ -168,6 +173,10 @@ class _PremiumHeader extends StatelessWidget {
           flex: 5,
           child: _GlobalSearchBar(),
         ),
+        if (headerAction != null) ...[
+          const SizedBox(width: 16),
+          headerAction!,
+        ],
         const SizedBox(width: 18),
         const _HeaderActions(),
       ],
@@ -185,6 +194,10 @@ class _PremiumHeader extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(child: _HeaderTitle(title: title, compact: true)),
+            if (headerAction != null) ...[
+              headerAction!,
+              const SizedBox(width: 8),
+            ],
             const _HeaderActions(compact: true),
           ],
         ),

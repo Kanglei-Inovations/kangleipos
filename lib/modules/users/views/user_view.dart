@@ -10,53 +10,67 @@ import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/user_controller.dart';
 
-class UserView extends GetView<UserController> {
+class UserView extends StatelessWidget {
   const UserView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
+    return const MainLayout(
       title: 'Users',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isDesktop = width >= 1280;
+      child: UserViewContent(),
+    );
+  }
+}
 
-          return Obx(() {
-            if (controller.isLoading.value && controller.users.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+class UserViewContent extends StatelessWidget {
+  const UserViewContent({super.key});
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _UserKpiGrid(width: width),
-                  const SizedBox(height: 18),
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: _MainUserContent()),
-                        const SizedBox(width: 18),
-                        const Expanded(flex: 3, child: _UserRightRail()),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        _MainUserContent(),
-                        const SizedBox(height: 18),
-                        const _UserRightRail(),
-                      ],
-                    ),
-                ],
-              ),
-            );
-          });
-        },
-      ),
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<UserController>()) {
+      Get.put(UserController());
+    }
+    final controller = Get.find<UserController>();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isDesktop = width >= 1280;
+
+        return Obx(() {
+          if (controller.isLoading.value && controller.users.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _UserKpiGrid(width: width),
+                const SizedBox(height: 18),
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 7, child: _MainUserContent()),
+                      const SizedBox(width: 18),
+                      const Expanded(flex: 3, child: _UserRightRail()),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      _MainUserContent(),
+                      const SizedBox(height: 18),
+                      const _UserRightRail(),
+                    ],
+                  ),
+              ],
+            ),
+          );
+        });
+      },
     );
   }
 }

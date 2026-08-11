@@ -9,47 +9,60 @@ import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/backup_controller.dart';
 
-class BackupView extends GetView<BackupController> {
+class BackupView extends StatelessWidget {
   const BackupView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
+    return const MainLayout(
       title: 'Backup & Restore',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isDesktop = width >= 1280;
+      child: BackupViewContent(),
+    );
+  }
+}
 
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _BackupKpiGrid(width: width),
-                const SizedBox(height: 18),
-                if (isDesktop)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 7, child: _MainBackupContent()),
-                      const SizedBox(width: 18),
-                      const Expanded(flex: 3, child: _BackupRightRail()),
-                    ],
-                  )
-                else
-                  Column(
-                    children: [
-                      _MainBackupContent(),
-                      const SizedBox(height: 18),
-                      const _BackupRightRail(),
-                    ],
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
+class BackupViewContent extends StatelessWidget {
+  const BackupViewContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<BackupController>()) {
+      Get.put(BackupController());
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isDesktop = width >= 1280;
+
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _BackupKpiGrid(width: width),
+              const SizedBox(height: 18),
+              if (isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 7, child: _MainBackupContent()),
+                    const SizedBox(width: 18),
+                    const Expanded(flex: 3, child: _BackupRightRail()),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _MainBackupContent(),
+                    const SizedBox(height: 18),
+                    const _BackupRightRail(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

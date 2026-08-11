@@ -7,8 +7,6 @@ import '../../modules/pos/views/pos_view.dart';
 import '../../modules/pos/bindings/pos_binding.dart';
 import '../../modules/sales/views/sales_view.dart';
 import '../../modules/sales/bindings/sales_binding.dart';
-import '../../modules/inventory/views/inventory_view.dart';
-import '../../modules/inventory/bindings/inventory_binding.dart';
 import '../../modules/products_master/views/products_master_page.dart';
 import '../../modules/products_master/views/add_product_page.dart';
 import '../../modules/products_master/bindings/products_master_binding.dart';
@@ -33,6 +31,8 @@ import '../../modules/backup/views/backup_view.dart';
 import '../../modules/backup/bindings/backup_binding.dart';
 import '../../modules/sync/views/sync_view.dart';
 import '../../modules/sync/bindings/sync_binding.dart';
+import '../../modules/payments/views/payment_view.dart';
+import '../../modules/payments/bindings/payment_binding.dart';
 import '../../modules/auth/views/setup_view.dart';
 import 'app_routes.dart';
 
@@ -65,8 +65,8 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.INVENTORY,
-      page: () => const InventoryView(),
-      binding: InventoryBinding(),
+      page: () => const ProductsMasterPage(),
+      binding: ProductsMasterBinding(),
     ),
     GetPage(
       name: AppRoutes.PRODUCTS_MASTER,
@@ -97,6 +97,11 @@ class AppPages {
       name: AppRoutes.EXPENSES,
       page: () => const ExpenseView(),
       binding: ExpenseBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.PAYMENTS,
+      page: () => const PaymentView(),
+      binding: PaymentBinding(),
     ),
     GetPage(
       name: AppRoutes.REPORTS,

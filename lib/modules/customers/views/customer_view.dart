@@ -254,17 +254,34 @@ class _MainCustomerContent extends GetView<CustomerController> {
   }
 }
 
-class _CustomerHeader extends StatelessWidget {
+class _CustomerHeader extends GetView<CustomerController> {
+  const _CustomerHeader();
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         const Expanded(child: Text('Customers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900))),
-        _HeaderButton(label: 'Add Customer', icon: Icons.add_rounded, color: const Color(0xFF4F46E5), isPrimary: true),
+        InkWell(
+          onTap: () => _showReceivePaymentModal(context, controller),
+          borderRadius: BorderRadius.circular(10),
+          child: const _HeaderButton(
+            label: 'Receive Payment',
+            icon: Icons.payments_rounded,
+            color: AppTheme.successColor,
+            isPrimary: true,
+          ),
+        ),
         const SizedBox(width: 12),
-        _HeaderButton(label: 'Import Customers', icon: Icons.download_rounded),
+        InkWell(
+          onTap: () => showDialog(context: context, builder: (ctx) =>  AddCustomerDialog()),
+          borderRadius: BorderRadius.circular(10),
+          child: const _HeaderButton(label: 'Add Customer', icon: Icons.add_rounded, color: Color(0xFF4F46E5), isPrimary: true),
+        ),
         const SizedBox(width: 12),
-        _IconCircleButton(icon: Icons.more_horiz),
+        const _HeaderButton(label: 'Import Customers', icon: Icons.download_rounded),
+        const SizedBox(width: 12),
+        const _IconCircleButton(icon: Icons.more_horiz),
       ],
     );
   }
@@ -798,8 +815,109 @@ class _SmallDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.withOpacity(0.2))),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
       child: Row(children: [Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)), const Icon(Icons.keyboard_arrow_down_rounded, size: 14)]),
     );
   }
+}
+
+void _showReceivePaymentModal(BuildContext context, CustomerController controller) {
+  if (controller.customers.isEmpty) {
+    Get.snackbar('No Customers', 'Please add a customer first.');
+    return;
+  }
+
+  Customer selected = controller.selectedCustomerForDetails.value ?? controller.customers.first;
+  final TextEditingController amountController = TextEditingController();
+  String selectedMode = 'CASH';
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      final theme = Theme.of(ctx);
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.payments_rounded, color: AppTheme.successColor),
+            SizedBox(width: 10),
+            Text('Receive Customer Payment', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<Customer>(
+                value: selected,
+                decoration: InputDecoration(
+                  labelText: 'Select Customer',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: controller.customers.map((c) {
+                  return DropdownMenuItem(
+                    value: c,
+                    child: Text('${c.name} (Due: ₹${c.balanceDue.toStringAsFixed(2)})'),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) selected = val;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Amount Received (₹)',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedMode,
+                decoration: InputDecoration(
+                  labelText: 'Payment Mode',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                  DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                  DropdownMenuItem(value: 'CARD', child: Text('Card')),
+                  DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
+                ],
+                onChanged: (val) {
+                  if (val != null) selectedMode = val;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0.0;
+              if (amount <= 0) {
+                Get.snackbar('Invalid Amount', 'Please enter a valid amount.');
+                return;
+              }
+              controller.receivePayment(selected.id, amount, selectedMode);
+              Navigator.of(ctx).pop();
+            },
+            icon: const Icon(Icons.check_circle_rounded, size: 16),
+            label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.successColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

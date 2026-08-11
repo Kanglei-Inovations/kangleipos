@@ -10,53 +10,67 @@ import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/gst_controller.dart';
 
-class GstView extends GetView<GstController> {
+class GstView extends StatelessWidget {
   const GstView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
+    return const MainLayout(
       title: 'GST / Tax',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isDesktop = width >= 1280;
+      child: GstViewContent(),
+    );
+  }
+}
 
-          return Obx(() {
-            if (controller.isLoading.value && controller.gstInvoices.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+class GstViewContent extends StatelessWidget {
+  const GstViewContent({super.key});
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _GstKpiGrid(width: width),
-                  const SizedBox(height: 18),
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: _MainGstContent()),
-                        const SizedBox(width: 18),
-                        const Expanded(flex: 3, child: _GstRightRail()),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        _MainGstContent(),
-                        const SizedBox(height: 18),
-                        const _GstRightRail(),
-                      ],
-                    ),
-                ],
-              ),
-            );
-          });
-        },
-      ),
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<GstController>()) {
+      Get.put(GstController());
+    }
+    final controller = Get.find<GstController>();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isDesktop = width >= 1280;
+
+        return Obx(() {
+          if (controller.isLoading.value && controller.gstInvoices.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _GstKpiGrid(width: width),
+                const SizedBox(height: 18),
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 7, child: _MainGstContent()),
+                      const SizedBox(width: 18),
+                      const Expanded(flex: 3, child: _GstRightRail()),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      _MainGstContent(),
+                      const SizedBox(height: 18),
+                      const _GstRightRail(),
+                    ],
+                  ),
+              ],
+            ),
+          );
+        });
+      },
     );
   }
 }

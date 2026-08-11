@@ -6,6 +6,7 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
+import '../common/shift_close_dialog.dart';
 
 class Sidebar extends StatelessWidget {
   final bool isMobile;
@@ -23,7 +24,6 @@ class Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = isMobile ? 280.0 : (isCollapsed ? 82.0 : 260.0);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     
     // Professional ERP Dark Navy color
     const Color sidebarDarkBg = Color(0xFF0F172A);
@@ -51,7 +51,7 @@ class Sidebar extends StatelessWidget {
               onToggle: onToggle,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Expanded(
             child: Theme(
               data: theme.copyWith(
@@ -72,19 +72,14 @@ class Sidebar extends StatelessWidget {
                   itemCount: _menuItems.length,
                   itemBuilder: (context, index) {
                     final item = _menuItems[index];
-                    if (item is _MenuHeader) {
-                      return _SidebarHeader(
-                        title: item.title,
-                        isCollapsed: isCollapsed && !isMobile,
-                      );
-                    } else if (item is _MenuEntry) {
-                      return _SidebarMenuItem(
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: _SidebarMenuItem(
                         entry: item,
                         isCollapsed: isCollapsed && !isMobile,
                         isMobile: isMobile,
-                      );
-                    }
-                    return const SizedBox.shrink();
+                      ),
+                    );
                   },
                 ),
               ),
@@ -95,6 +90,8 @@ class Sidebar extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Column(
               children: [
+                _ShiftCloseSidebarButton(isCollapsed: isCollapsed && !isMobile),
+                const SizedBox(height: 12),
                 if (!(isCollapsed && !isMobile)) ...[
                   const _SystemStatusCard(),
                   const SizedBox(height: 12),
@@ -133,16 +130,67 @@ class Sidebar extends StatelessWidget {
   }
 }
 
-abstract class _SidebarItem {
-  const _SidebarItem();
+class _ShiftCloseSidebarButton extends StatelessWidget {
+  final bool isCollapsed;
+  const _ShiftCloseSidebarButton({required this.isCollapsed});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isCollapsed) {
+      return InkWell(
+        onTap: () => showDayEndZReportDialog(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+          ),
+          child: const Icon(Icons.fact_check_rounded, color: Color(0xFF10B981), size: 20),
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: () => showDayEndZReportDialog(context),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF059669), Color(0xFF10B981)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.fact_check_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Shift Close & Z-Report',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _MenuHeader extends _SidebarItem {
-  final String title;
-  const _MenuHeader(this.title);
-}
-
-class _MenuEntry extends _SidebarItem {
+class _MenuEntry {
   final IconData icon;
   final String title;
   final String? route;
@@ -150,62 +198,20 @@ class _MenuEntry extends _SidebarItem {
   const _MenuEntry(this.icon, this.title, this.route);
 }
 
-final List<_SidebarItem> _menuItems = [
-  const _MenuHeader('CORE'),
-  const _MenuEntry(Icons.dashboard_rounded, 'Dashboard', AppRoutes.DASHBOARD),
-  const _MenuEntry(Icons.point_of_sale_rounded, 'POS / Billing', AppRoutes.POS),
-  const _MenuEntry(Icons.history_rounded, 'Sales', AppRoutes.SALES),
-  
-  const _MenuHeader('INVENTORY'),
-  const _MenuEntry(Icons.shopping_bag_outlined, 'Products', AppRoutes.PRODUCTS_MASTER),
-  const _MenuEntry(Icons.inventory_2_rounded, 'Inventory', AppRoutes.INVENTORY),
-  const _MenuEntry(Icons.shopping_bag_rounded, 'Purchases', AppRoutes.PURCHASES),
-  const _MenuEntry(Icons.diversity_3_rounded, 'Suppliers', AppRoutes.SUPPLIERS),
-  
-  const _MenuHeader('FINANCE & CRM'),
+final List<_MenuEntry> _menuItems = [
+  const _MenuEntry(Icons.grid_view_rounded, 'Dashboard', AppRoutes.DASHBOARD),
+  const _MenuEntry(Icons.receipt_long_rounded, 'Sales', AppRoutes.SALES),
+  const _MenuEntry(Icons.groups_rounded, 'Customer', AppRoutes.CUSTOMERS),
+  const _MenuEntry(Icons.inventory_2_rounded, 'Products', AppRoutes.PRODUCTS_MASTER),
+  const _MenuEntry(Icons.local_shipping_rounded, 'Purchases', AppRoutes.PURCHASES),
+  const _MenuEntry(Icons.storefront_rounded, 'Suppliers', AppRoutes.SUPPLIERS),
   const _MenuEntry(Icons.account_balance_wallet_rounded, 'Expenses', AppRoutes.EXPENSES),
-  const _MenuEntry(Icons.groups_2_rounded, 'Customers', AppRoutes.CUSTOMERS),
-  const _MenuEntry(Icons.analytics_rounded, 'Reports', AppRoutes.REPORTS),
-  const _MenuEntry(Icons.verified_user_rounded, 'GST / Tax', AppRoutes.GST),
-  
-  const _MenuHeader('SYSTEM'),
-  const _MenuEntry(Icons.manage_accounts_rounded, 'Users', AppRoutes.USERS),
+  const _MenuEntry(Icons.payments_rounded, 'Payments', AppRoutes.PAYMENTS),
+  const _MenuEntry(Icons.bar_chart_rounded, 'Reports', AppRoutes.REPORTS),
   const _MenuEntry(Icons.settings_rounded, 'Settings', AppRoutes.SETTINGS),
-  const _MenuEntry(Icons.cloud_upload_rounded, 'Backup & Restore', AppRoutes.BACKUP),
-  const _MenuEntry(Icons.sync_rounded, 'Sync Center', AppRoutes.SYNC),
 ];
 
-class _SidebarHeader extends StatelessWidget {
-  final String title;
-  final bool isCollapsed;
 
-  const _SidebarHeader({required this.title, required this.isCollapsed});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isCollapsed) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Divider(
-            color: Colors.white.withValues(alpha: 0.05),
-            indent: 16,
-            endIndent: 16),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, top: 24, bottom: 10),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.35),
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.8,
-        ),
-      ),
-    ).animate().fadeIn(duration: 400.ms);
-  }
-}
 
 class _SidebarLogo extends StatelessWidget {
   final bool isCollapsed;

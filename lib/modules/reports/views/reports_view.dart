@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../database/database.dart';
 import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
+import '../../gst/views/gst_view.dart';
 import '../controllers/reports_controller.dart';
 
 class ReportsView extends GetView<ReportsController> {
@@ -41,11 +42,17 @@ class ReportsView extends GetView<ReportsController> {
                     
                     // Main Content
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _ReportsKpiGrid(width: width - (isDesktop ? 260 : 0)),
-                          const SizedBox(height: 18),
+                      child: Obx(() {
+                        final cat = controller.selectedCategory.value;
+                        if (cat == 'GST Reports' || cat == 'Tax Reports' || cat == 'GST / Tax') {
+                          return const GstViewContent();
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _ReportsKpiGrid(width: width - (isDesktop ? 260 : 0)),
+                            const SizedBox(height: 18),
                           if (isDesktop)
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,10 +92,11 @@ class ReportsView extends GetView<ReportsController> {
                                 _RecentReportsPanel(),
                               ],
                             ),
-                          const SizedBox(height: 18),
-                          _ReportSettingsPanel(),
-                        ],
-                      ),
+                            const SizedBox(height: 18),
+                            _ReportSettingsPanel(),
+                          ],
+                        );
+                      }),
                     ),
                     
                     // Right Sidebar: Quick Reports

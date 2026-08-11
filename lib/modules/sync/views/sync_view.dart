@@ -6,50 +6,63 @@ import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/sync_controller.dart';
 
-class SyncView extends GetView<SyncController> {
+class SyncView extends StatelessWidget {
   const SyncView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
+    return const MainLayout(
       title: 'Sync Center',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isDesktop = width >= 1280;
+      child: SyncViewContent(),
+    );
+  }
+}
 
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _SyncKpiGrid(width: width),
-                const SizedBox(height: 18),
-                if (isDesktop)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 7, child: _MainSyncContent()),
-                      const SizedBox(width: 18),
-                      const Expanded(flex: 3, child: _SyncRightRail()),
-                    ],
-                  )
-                else
-                  Column(
-                    children: [
-                      _MainSyncContent(),
-                      const SizedBox(height: 18),
-                      const _SyncRightRail(),
-                    ],
-                  ),
-                const SizedBox(height: 18),
-                const _SyncInfoBanner(),
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        },
-      ),
+class SyncViewContent extends StatelessWidget {
+  const SyncViewContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<SyncController>()) {
+      Get.put(SyncController());
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isDesktop = width >= 1280;
+
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SyncKpiGrid(width: width),
+              const SizedBox(height: 18),
+              if (isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 7, child: _MainSyncContent()),
+                    const SizedBox(width: 18),
+                    const Expanded(flex: 3, child: _SyncRightRail()),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _MainSyncContent(),
+                    const SizedBox(height: 18),
+                    const _SyncRightRail(),
+                  ],
+                ),
+              const SizedBox(height: 18),
+              const _SyncInfoBanner(),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
     );
   }
 }

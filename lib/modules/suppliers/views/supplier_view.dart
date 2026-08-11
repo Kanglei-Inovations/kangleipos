@@ -314,6 +314,8 @@ class _MainSupplierContent extends GetView<SupplierController> {
               const SizedBox(width: 12),
               _ActionButton(icon: Icons.tune_rounded, label: 'Filters'),
               const SizedBox(width: 12),
+              const _PaySupplierButton(),
+              const SizedBox(width: 12),
               _AddSupplierButton(),
             ],
           ),
@@ -322,6 +324,26 @@ class _MainSupplierContent extends GetView<SupplierController> {
           const SizedBox(height: 20),
           _TablePagination(),
         ],
+      ),
+    );
+  }
+}
+
+class _PaySupplierButton extends GetView<SupplierController> {
+  const _PaySupplierButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () => _showPaySupplierModal(context, controller),
+      icon: const Icon(Icons.outbound_rounded, size: 16),
+      label: const Text('Pay Supplier', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 0,
       ),
     );
   }
@@ -915,8 +937,108 @@ class _SmallDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.withOpacity(0.2))),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
       child: Row(children: [Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)), const Icon(Icons.keyboard_arrow_down_rounded, size: 14)]),
     );
   }
+}
+
+void _showPaySupplierModal(BuildContext context, SupplierController controller) {
+  if (controller.suppliers.isEmpty) {
+    Get.snackbar('No Suppliers', 'Please add a supplier first.');
+    return;
+  }
+
+  Supplier selected = controller.suppliers.first;
+  final TextEditingController amountController = TextEditingController();
+  String selectedMode = 'CASH';
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.outbound_rounded, color: AppTheme.primaryColor),
+            SizedBox(width: 10),
+            Text('Pay Vendor / Supplier', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<Supplier>(
+                value: selected,
+                decoration: InputDecoration(
+                  labelText: 'Select Supplier',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: controller.suppliers.map((s) {
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text('${s.name} (Payable: ₹${s.balanceDue.toStringAsFixed(2)})'),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) selected = val;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Amount Paid (₹)',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedMode,
+                decoration: InputDecoration(
+                  labelText: 'Payment Mode',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                  DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
+                  DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                  DropdownMenuItem(value: 'CHEQUE', child: Text('Cheque')),
+                ],
+                onChanged: (val) {
+                  if (val != null) selectedMode = val;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0.0;
+              if (amount <= 0) {
+                Get.snackbar('Invalid Amount', 'Please enter a valid amount.');
+                return;
+              }
+              controller.paySupplier(selected.id, amount, selectedMode);
+              Navigator.of(ctx).pop();
+            },
+            icon: const Icon(Icons.check_circle_rounded, size: 16),
+            label: const Text('Record Payment', style: TextStyle(fontWeight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

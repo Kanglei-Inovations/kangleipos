@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/sales_controller.dart';
-import '../../products_master/widgets/master_filter_bar.dart';
 
 class SalesView extends GetView<SalesController> {
   const SalesView({super.key});
@@ -14,6 +14,23 @@ class SalesView extends GetView<SalesController> {
   Widget build(BuildContext context) {
     return MainLayout(
       title: 'Sales',
+      headerAction: ElevatedButton.icon(
+        onPressed: () => Get.toNamed(AppRoutes.POS),
+        icon: const Icon(Icons.point_of_sale_rounded, size: 18),
+        label: const Text(
+          'POS / Billing',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+      ),
       child: Obx(() {
         controller.refreshAllData();
         if (controller.isLoading.value && controller.sales.isEmpty) {

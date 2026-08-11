@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:get/get.dart';
 
 import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
+import '../../backup/views/backup_view.dart';
+import '../../sync/views/sync_view.dart';
+import '../../users/views/user_view.dart';
 
-class SettingsView extends StatelessWidget {
+class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
+
+  @override
+  State<SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsViewState extends State<SettingsView> {
+  String _activeTab = 'Business Settings';
+
+  void _selectTab(String tabLabel) {
+    setState(() {
+      _activeTab = tabLabel;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,21 +34,32 @@ class SettingsView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Left Sidebar: Settings Menu
-              if (isDesktop) const SizedBox(width: 260, child: _SettingsMenuSidebar()),
+              if (isDesktop)
+                SizedBox(
+                  width: 260,
+                  child: _SettingsMenuSidebar(
+                    activeTab: _activeTab,
+                    onSelectTab: _selectTab,
+                  ),
+                ),
               if (isDesktop) const SizedBox(width: 18),
 
               // Main Content
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      const _BusinessProfileCard(),
-                      const SizedBox(height: 18),
-                      const _SettingsGrid(),
-                      const SizedBox(height: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_activeTab != 'Business Settings') ...[
+                      _SettingsSubHeader(
+                        title: _activeTab,
+                        onBack: () => _selectTab('Business Settings'),
+                      ),
+                      const SizedBox(height: 14),
                     ],
-                  ),
+                    Expanded(
+                      child: _buildActiveTabContent(),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -43,26 +68,106 @@ class SettingsView extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildActiveTabContent() {
+    switch (_activeTab) {
+      case 'User & Role Settings':
+        return const UserViewContent();
+      case 'Backup Settings':
+        return const BackupViewContent();
+      case 'Sync Settings':
+        return const SyncViewContent();
+      case 'Business Settings':
+      default:
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              const _BusinessProfileCard(),
+              const SizedBox(height: 18),
+              _SettingsGrid(onSelectCard: _selectTab),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+    }
+  }
+}
+
+class _SettingsSubHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+
+  const _SettingsSubHeader({required this.title, required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(18),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onBack,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.indigo.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.arrow_back_rounded, size: 16, color: Colors.indigo),
+                  SizedBox(width: 6),
+                  Text(
+                    'Back to Overview',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.indigo,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SettingsMenuSidebar extends StatelessWidget {
-  const _SettingsMenuSidebar();
+  final String activeTab;
+  final ValueChanged<String> onSelectTab;
+
+  const _SettingsMenuSidebar({
+    required this.activeTab,
+    required this.onSelectTab,
+  });
 
   @override
   Widget build(BuildContext context) {
     final menuItems = [
-      {'label': 'Business Settings', 'icon': Icons.business_outlined, 'selected': true},
-      {'label': 'General Settings', 'icon': Icons.settings_outlined, 'selected': false},
-      {'label': 'POS Settings', 'icon': Icons.point_of_sale_outlined, 'selected': false},
-      {'label': 'Invoice Settings', 'icon': Icons.receipt_long_outlined, 'selected': false},
-      {'label': 'Printer Settings', 'icon': Icons.print_outlined, 'selected': false},
-      {'label': 'Payment Settings', 'icon': Icons.payments_outlined, 'selected': false},
-      {'label': 'Notification Settings', 'icon': Icons.notifications_none_outlined, 'selected': false},
-      {'label': 'User & Role Settings', 'icon': Icons.people_outline, 'selected': false},
-      {'label': 'Backup Settings', 'icon': Icons.cloud_upload_outlined, 'selected': false},
-      {'label': 'Security Settings', 'icon': Icons.security_outlined, 'selected': false},
-      {'label': 'Integrations', 'icon': Icons.extension_outlined, 'selected': false},
-      {'label': 'System Settings', 'icon': Icons.dns_outlined, 'selected': false},
+      {'label': 'Business Settings', 'icon': Icons.business_outlined},
+      {'label': 'User & Role Settings', 'icon': Icons.people_outline},
+      {'label': 'Backup Settings', 'icon': Icons.cloud_upload_outlined},
+      {'label': 'Sync Settings', 'icon': Icons.sync_rounded},
+      {'label': 'General Settings', 'icon': Icons.settings_outlined},
+      {'label': 'POS Settings', 'icon': Icons.point_of_sale_outlined},
+      {'label': 'Invoice Settings', 'icon': Icons.receipt_long_outlined},
+      {'label': 'Printer Settings', 'icon': Icons.print_outlined},
+      {'label': 'Payment Settings', 'icon': Icons.payments_outlined},
+      {'label': 'Notification Settings', 'icon': Icons.notifications_none_outlined},
+      {'label': 'Security Settings', 'icon': Icons.security_outlined},
+      {'label': 'Integrations', 'icon': Icons.extension_outlined},
+      {'label': 'System Settings', 'icon': Icons.dns_outlined},
     ];
 
     return Column(
@@ -79,13 +184,14 @@ class _SettingsMenuSidebar extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ...menuItems.map((item) {
-                final isSelected = item['selected'] as bool;
+                final label = item['label'] as String;
+                final isSelected = activeTab == label;
                 return InkWell(
-                  onTap: () {},
+                  onTap: () => onSelectTab(label),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF4F46E5).withOpacity(0.1) : Colors.transparent,
+                      color: isSelected ? const Color(0xFF4F46E5).withValues(alpha: 0.1) : Colors.transparent,
                       border: Border(right: BorderSide(color: isSelected ? const Color(0xFF4F46E5) : Colors.transparent, width: 3)),
                     ),
                     child: Row(
@@ -94,7 +200,7 @@ class _SettingsMenuSidebar extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            item['label'] as String,
+                            label,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -188,11 +294,11 @@ class _BusinessProfileCard extends StatelessWidget {
                   children: [
                     Container(
                       width: 100, height: 100,
-                      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withOpacity(0.1))),
+                      decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.blue.withValues(alpha: 0.1))),
                       child: const Icon(Icons.store_outlined, size: 48, color: Colors.blue),
                     ),
                     const SizedBox(width: 24),
-                    Expanded(
+                    const Expanded(
                       child: Wrap(
                         runSpacing: 24,
                         children: [
@@ -216,8 +322,8 @@ class _BusinessProfileCard extends StatelessWidget {
               Container(
                 width: 120, height: 120,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withOpacity(0.2))),
-                child: Image.network('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png'),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+                child: const Icon(Icons.qr_code_2_rounded, size: 90, color: Colors.indigo),
               ),
               const SizedBox(height: 8),
               const Text('Store QR Code', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.grey)),
@@ -249,7 +355,9 @@ class _ProfileInfo extends StatelessWidget {
 }
 
 class _SettingsGrid extends StatelessWidget {
-  const _SettingsGrid();
+  final ValueChanged<String> onSelectCard;
+
+  const _SettingsGrid({required this.onSelectCard});
 
   @override
   Widget build(BuildContext context) {
@@ -260,19 +368,111 @@ class _SettingsGrid extends StatelessWidget {
       crossAxisSpacing: 18,
       mainAxisSpacing: 18,
       childAspectRatio: 1.8,
-      children: const [
-        _SettingsCard(title: 'General Settings', desc: 'Manage language, currency, date format and other preferences.', icon: Icons.settings_outlined, color: Colors.indigo, values: {'Language': 'English', 'Currency': 'INR (₹)', 'Date Format': 'DD-MM-YYYY'}),
-        _SettingsCard(title: 'POS Settings', desc: 'Configure POS behavior, barcode, billing and checkout preferences.', icon: Icons.point_of_sale_outlined, color: Colors.blue, values: {'Default Customer': 'Walk-in Customer', 'Barcode Scanner': 'Enabled', 'Auto Print': 'Enabled'}),
-        _SettingsCard(title: 'Invoice Settings', desc: 'Customize invoice appearance, terms, numbering and default values.', icon: Icons.receipt_long_outlined, color: Colors.purple, values: {'Invoice Prefix': 'INV-', 'Next Invoice No.': '10057', 'Due Days': '15 Days'}),
-        _SettingsCard(title: 'Printer Settings', desc: 'Manage thermal printer, invoice printing and print templates.', icon: Icons.print_outlined, color: Colors.orange, values: {'Default Printer': 'Thermal Printer 1', 'Print Size': '80mm', 'Print Copies': '1'}),
-        _SettingsCard(title: 'Tax & GST Settings', desc: 'Configure GST rates, tax preferences and default tax settings.', icon: Icons.account_balance_outlined, color: Colors.teal, values: {'Default GST Rate': '18%', 'Round Off': 'Enabled', 'Inclusive of Tax': 'No'}),
-        _SettingsCard(title: 'Payment Settings', desc: 'Manage payment methods, defaults and card charges.', icon: Icons.payments_outlined, color: Colors.green, values: {'Default Payment': 'Cash', 'UPI ID': 'store@upi', 'Card Charges': '2.00%'}),
-        _SettingsCard(title: 'Notification Settings', desc: 'Control email, SMS and in-app notification preferences.', icon: Icons.notifications_none_outlined, color: Colors.deepPurple, values: {'Email Notifications': 'Enabled', 'SMS Notifications': 'Enabled', 'Low Stock Alerts': 'Enabled'}),
-        _SettingsCard(title: 'User & Role Settings', desc: 'Manage user access, roles and permissions.', icon: Icons.people_outline, color: Colors.blueGrey, values: {'Total Users': '12', 'Active Users': '5', 'Super Admin': '1'}),
-        _SettingsCard(title: 'Backup Settings', desc: 'Manage data backup frequency and storage preferences.', icon: Icons.cloud_upload_outlined, color: Colors.blue, values: {'Auto Backup': 'Daily', 'Last Backup': 'May 24, 2025 02:30 AM', 'Backup Location': 'Google Drive'}),
-        _SettingsCard(title: 'Security Settings', desc: 'Manage password policy, 2FA and login security.', icon: Icons.security_outlined, color: Colors.red, values: {'Two Factor Auth': 'Enabled', 'Password Expiry': '90 Days', 'Login Alerts': 'Enabled'}),
-        _SettingsCard(title: 'Integrations', desc: 'Manage third party integrations and external services.', icon: Icons.extension_outlined, color: Colors.indigo, values: {'E-commerce': 'Connected', 'Accounting': 'Connected', 'SMS Gateway': 'Connected'}),
-        _SettingsCard(title: 'System Settings', desc: 'Configure system behavior, performance and maintenance.', icon: Icons.dns_outlined, color: Colors.brown, values: {'Data Retention': '1 Year', 'System Logs': 'Enabled', 'Maintenance Mode': 'Disabled'}),
+      children: [
+        _SettingsCard(
+          title: 'General Settings',
+          desc: 'Manage language, currency, date format and other preferences.',
+          icon: Icons.settings_outlined,
+          color: Colors.indigo,
+          onTap: () => onSelectCard('General Settings'),
+          values: const {'Language': 'English', 'Currency': 'INR (₹)', 'Date Format': 'DD-MM-YYYY'},
+        ),
+        _SettingsCard(
+          title: 'POS Settings',
+          desc: 'Configure POS behavior, barcode, billing and checkout preferences.',
+          icon: Icons.point_of_sale_outlined,
+          color: Colors.blue,
+          onTap: () => onSelectCard('POS Settings'),
+          values: const {'Default Customer': 'Walk-in Customer', 'Barcode Scanner': 'Enabled', 'Auto Print': 'Enabled'},
+        ),
+        _SettingsCard(
+          title: 'Invoice Settings',
+          desc: 'Customize invoice appearance, terms, numbering and default values.',
+          icon: Icons.receipt_long_outlined,
+          color: Colors.purple,
+          onTap: () => onSelectCard('Invoice Settings'),
+          values: const {'Invoice Prefix': 'INV-', 'Next Invoice No.': '10057', 'Due Days': '15 Days'},
+        ),
+        _SettingsCard(
+          title: 'Printer Settings',
+          desc: 'Manage thermal printer, invoice printing and print templates.',
+          icon: Icons.print_outlined,
+          color: Colors.orange,
+          onTap: () => onSelectCard('Printer Settings'),
+          values: const {'Default Printer': 'Thermal Printer 1', 'Print Size': '80mm', 'Print Copies': '1'},
+        ),
+        _SettingsCard(
+          title: 'Tax & GST Settings',
+          desc: 'Configure GST rates, tax preferences and default tax settings.',
+          icon: Icons.account_balance_outlined,
+          color: Colors.teal,
+          onTap: () => onSelectCard('Tax & GST Settings'),
+          values: const {'Default GST Rate': '18%', 'Round Off': 'Enabled', 'Inclusive of Tax': 'No'},
+        ),
+        _SettingsCard(
+          title: 'Payment Settings',
+          desc: 'Manage payment methods, defaults and card charges.',
+          icon: Icons.payments_outlined,
+          color: Colors.green,
+          onTap: () => onSelectCard('Payment Settings'),
+          values: const {'Default Payment': 'Cash', 'UPI ID': 'store@upi', 'Card Charges': '2.00%'},
+        ),
+        _SettingsCard(
+          title: 'Notification Settings',
+          desc: 'Control email, SMS and in-app notification preferences.',
+          icon: Icons.notifications_none_outlined,
+          color: Colors.deepPurple,
+          onTap: () => onSelectCard('Notification Settings'),
+          values: const {'Email Notifications': 'Enabled', 'SMS Notifications': 'Enabled', 'Low Stock Alerts': 'Enabled'},
+        ),
+        _SettingsCard(
+          title: 'User & Role Settings',
+          desc: 'Manage user access, staff roles and permissions.',
+          icon: Icons.people_outline,
+          color: Colors.blueGrey,
+          onTap: () => onSelectCard('User & Role Settings'),
+          values: const {'Total Users': '12', 'Active Users': '5', 'Super Admin': '1'},
+        ),
+        _SettingsCard(
+          title: 'Backup Settings',
+          desc: 'Manage data backup frequency, archives and restores.',
+          icon: Icons.cloud_upload_outlined,
+          color: Colors.blue,
+          onTap: () => onSelectCard('Backup Settings'),
+          values: const {'Auto Backup': 'Daily', 'Last Backup': 'May 24, 2025 02:30 AM', 'Backup Location': 'Local Storage'},
+        ),
+        _SettingsCard(
+          title: 'Sync Settings',
+          desc: 'Manage multi-device LAN synchronization and terminal pairings.',
+          icon: Icons.sync_rounded,
+          color: Colors.teal,
+          onTap: () => onSelectCard('Sync Settings'),
+          values: const {'Sync Mode': 'Server & Client', 'Connected Terminals': '3', 'Port': '8080'},
+        ),
+        _SettingsCard(
+          title: 'Security Settings',
+          desc: 'Manage password policy, 2FA and login security.',
+          icon: Icons.security_outlined,
+          color: Colors.red,
+          onTap: () => onSelectCard('Security Settings'),
+          values: const {'Two Factor Auth': 'Enabled', 'Password Expiry': '90 Days', 'Login Alerts': 'Enabled'},
+        ),
+        _SettingsCard(
+          title: 'Integrations',
+          desc: 'Manage third party integrations and external services.',
+          icon: Icons.extension_outlined,
+          color: Colors.indigo,
+          onTap: () => onSelectCard('Integrations'),
+          values: const {'E-commerce': 'Connected', 'Accounting': 'Connected', 'SMS Gateway': 'Connected'},
+        ),
+        _SettingsCard(
+          title: 'System Settings',
+          desc: 'Configure system behavior, performance and maintenance.',
+          icon: Icons.dns_outlined,
+          color: Colors.brown,
+          onTap: () => onSelectCard('System Settings'),
+          values: const {'Data Retention': '1 Year', 'System Logs': 'Enabled', 'Maintenance Mode': 'Disabled'},
+        ),
       ],
     );
   }
@@ -283,46 +483,75 @@ class _SettingsCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Map<String, String> values;
+  final VoidCallback? onTap;
 
-  const _SettingsCard({required this.title, required this.desc, required this.icon, required this.color, required this.values});
+  const _SettingsCard({
+    required this.title,
+    required this.desc,
+    required this.icon,
+    required this.color,
+    required this.values,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
+    return InkWell(
       borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(width: 36, height: 36, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, size: 18, color: color)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: onTap,
+      child: GlassPanel(
+        borderRadius: BorderRadius.circular(24),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                  child: Icon(icon, size: 18, color: color),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(Icons.chevron_right_rounded, size: 16, color: color),
+                        ],
+                      ),
+                      Text(desc, style: const TextStyle(fontSize: 9, color: Colors.grey, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            ...values.entries.map((e) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                    Text(desc, style: const TextStyle(fontSize: 9, color: Colors.grey, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(e.key, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w700)),
+                    Text(e.value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          ...values.entries.map((e) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(e.key, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w700)),
-                  Text(e.value, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
-                ],
-              ),
-            );
-          }),
-        ],
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

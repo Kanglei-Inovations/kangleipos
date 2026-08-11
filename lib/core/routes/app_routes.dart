@@ -19,5 +19,6 @@ class AppRoutes {
   static const USERS = '/users';
   static const BACKUP = '/backup';
   static const SYNC = '/sync';
+  static const PAYMENTS = '/payments';
   static const SETTINGS = '/settings';
 }
