@@ -46,11 +46,17 @@ class MasterAddNewModal extends StatelessWidget {
             _buildOption(
               context,
               icon: Icons.shopping_bag_rounded,
-              title: 'Add Product',
+              title: 'Add Product & Stock (via Purchase)',
               color: Colors.blue,
               onTap: () {
                 Get.back();
-                Get.toNamed(AppRoutes.ADD_PRODUCT);
+                Get.toNamed(AppRoutes.PURCHASES);
+                Get.snackbar(
+                  'Purchase Onboarding',
+                  'In POS ERP, new products and initial stock intake are onboarded through Purchase Entry.',
+                  backgroundColor: const Color(0xFF4F46E5),
+                  colorText: Colors.white,
+                );
               },
             ),
             _buildOption(

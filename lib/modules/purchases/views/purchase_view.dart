@@ -29,38 +29,49 @@ class PurchaseView extends GetView<PurchaseController> {
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _PurchaseKpiGrid(width: width),
-                  const SizedBox(height: 18),
-                  if (isDesktop)
-                    Row(
+              child: isDesktop
+                  ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _MainPurchaseContent()),
-                        const SizedBox(width: 18),
-                        const SizedBox(width: 330, child: _PurchaseRightRail()),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _PurchaseKpiGrid(width: width - 360),
+                              const SizedBox(height: 18),
+                              _MainPurchaseContent(),
+                              const SizedBox(height: 18),
+                              _BottomActionButtons(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        const SizedBox(
+                          width: 340,
+                          child: _PurchaseRightRail(),
+                        ),
                       ],
                     )
-                  else
-                    Column(
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        _PurchaseKpiGrid(width: width),
+                        const SizedBox(height: 18),
                         _MainPurchaseContent(),
+                        const SizedBox(height: 18),
+                        _BottomActionButtons(),
                         const SizedBox(height: 18),
                         const _PurchaseRightRail(),
                       ],
                     ),
-                  const SizedBox(height: 18),
-                  _BottomActionButtons(),
-                ],
-              ),
             );
           });
         },
       ),
     );
   }
+
+
 }
 
 class _PurchaseKpiGrid extends GetView<PurchaseController> {
@@ -283,21 +294,6 @@ class _KpiSparklinePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _MainPurchaseContent extends GetView<PurchaseController> {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _PurchaseTabs(),
-        const SizedBox(height: 18),
-        _PurchaseFilterBar(),
-        const SizedBox(height: 18),
-        _PurchaseTable(),
-      ],
-    );
-  }
-}
-
 class _PurchaseTabs extends GetView<PurchaseController> {
   @override
   Widget build(BuildContext context) {
@@ -374,13 +370,82 @@ class _PurchaseFilterBar extends GetView<PurchaseController> {
           ),
         ),
         const SizedBox(width: 12),
-        _FilterDropdown(label: 'All Suppliers', icon: Icons.person_outline),
+        Obx(() => Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<Supplier?>(
+              value: controller.selectedSupplierFilter.value,
+              hint: Row(
+                children: [
+                  Icon(Icons.person_outline, size: 18, color: muted),
+                  const SizedBox(width: 8),
+                  Text('All Suppliers', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: muted)),
+                ],
+              ),
+              items: [
+                DropdownMenuItem<Supplier?>(
+                  value: null,
+                  child: Text('All Suppliers', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: muted)),
+                ),
+                ...controller.suppliers.map((s) {
+                  return DropdownMenuItem<Supplier?>(
+                    value: s,
+                    child: Text(s.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  );
+                }),
+              ],
+              onChanged: (val) => controller.selectedSupplierFilter.value = val,
+            ),
+          ),
+        )),
         const SizedBox(width: 12),
-        _FilterDropdown(label: 'All Status', icon: Icons.sync_rounded),
+        Obx(() => Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: controller.selectedStatusFilter.value,
+              items: ['All Status', 'Paid', 'Partial', 'Due'].map((status) {
+                return DropdownMenuItem<String>(
+                  value: status,
+                  child: Row(
+                    children: [
+                      Icon(Icons.sync_rounded, size: 18, color: muted),
+                      const SizedBox(width: 8),
+                      Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) controller.selectedStatusFilter.value = val;
+              },
+            ),
+          ),
+        )),
         const SizedBox(width: 12),
         _FilterDropdown(label: 'Select Date', icon: Icons.calendar_today_outlined),
         const SizedBox(width: 12),
-        _ActionButton(icon: Icons.tune_rounded, label: 'Filters'),
+        InkWell(
+          onTap: () {
+            controller.searchQuery.value = '';
+            controller.selectedSupplierFilter.value = null;
+            controller.selectedStatusFilter.value = 'All Status';
+            controller.selectedTab.value = 'All Purchases';
+          },
+          child: const _ActionButton(icon: Icons.tune_rounded, label: 'Reset Filters'),
+        ),
       ],
     );
   }
@@ -418,6 +483,26 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
+class _MainPurchaseContent extends GetView<PurchaseController> {
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(24),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PurchaseTabs(),
+          const SizedBox(height: 18),
+          _PurchaseFilterBar(),
+          const SizedBox(height: 18),
+          _PurchaseTable(),
+        ],
+      ),
+    );
+  }
+}
+
 class _PurchaseTable extends GetView<PurchaseController> {
   @override
   Widget build(BuildContext context) {
@@ -426,16 +511,13 @@ class _PurchaseTable extends GetView<PurchaseController> {
 
     final columns = ['Invoice No.', 'Supplier', 'Date', 'Total Amount', 'Paid Amount', 'Due Amount', 'Status', 'Actions'];
 
-    return GlassPanel(
-      borderRadius: BorderRadius.circular(24),
-      padding: const EdgeInsets.all(0),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9))),
-            ),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9))),
+          ),
             child: Row(
               children: columns.map((col) {
                 return Expanded(
@@ -449,7 +531,18 @@ class _PurchaseTable extends GetView<PurchaseController> {
             ),
           ),
           Obx(() {
-            final purchases = controller.filteredPurchases;
+            final purchases = controller.paginatedPurchases;
+            if (purchases.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(
+                  child: Text(
+                    'No purchase orders found',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
+                  ),
+                ),
+              );
+            }
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -459,10 +552,9 @@ class _PurchaseTable extends GetView<PurchaseController> {
               },
             );
           }),
-          _TablePagination(),
+          const _TablePagination(),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -585,35 +677,68 @@ class _TableActionIcon extends StatelessWidget {
   }
 }
 
-class _TablePagination extends StatelessWidget {
+class _TablePagination extends GetView<PurchaseController> {
+  const _TablePagination();
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          _PaginationButton(icon: Icons.chevron_left_rounded),
-          const SizedBox(width: 8),
-          _PageNumber(number: 1, active: true),
-          _PageNumber(number: 2),
-          _PageNumber(number: 3),
-          _PageNumber(number: 4),
-          _PageNumber(number: 5),
-          const Text('...', style: TextStyle(color: Colors.grey)),
-          _PageNumber(number: 9),
-          const SizedBox(width: 8),
-          _PaginationButton(icon: Icons.chevron_right_rounded),
-          const Spacer(),
-          const Text('Rows per page:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.2)), borderRadius: BorderRadius.circular(8)),
-            child: Row(children: const [Text('10', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)), SizedBox(width: 8), Icon(Icons.keyboard_arrow_down_rounded, size: 16)]),
-          ),
-        ],
-      ),
-    );
+    return Obx(() {
+      final totalPages = controller.totalPages;
+      final currentPage = controller.currentPage.value;
+
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            InkWell(
+              onTap: controller.previousPage,
+              borderRadius: BorderRadius.circular(8),
+              child: const _PaginationButton(icon: Icons.chevron_left_rounded),
+            ),
+            const SizedBox(width: 8),
+            ...List.generate(totalPages, (index) {
+              final page = index + 1;
+              return InkWell(
+                onTap: () => controller.goToPage(page),
+                borderRadius: BorderRadius.circular(8),
+                child: _PageNumber(number: page, active: page == currentPage),
+              );
+            }),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: controller.nextPage,
+              borderRadius: BorderRadius.circular(8),
+              child: const _PaginationButton(icon: Icons.chevron_right_rounded),
+            ),
+            const Spacer(),
+            const Text('Rows per page:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: controller.rowsPerPage.value,
+                  isDense: true,
+                  items: [5, 10, 15, 20].map((int val) {
+                    return DropdownMenuItem<int>(
+                      value: val,
+                      child: Text('$val', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) controller.setRowsPerPage(val);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -870,20 +995,55 @@ class _GrnItem extends StatelessWidget {
   }
 }
 
-class _BottomActionButtons extends StatelessWidget {
+class _BottomActionButtons extends GetView<PurchaseController> {
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _BigActionButton(label: 'New Purchase', icon: Icons.add_rounded, color: const Color(0xFF4F46E5), isPrimary: true),
+        _BigActionButton(
+          label: 'New Purchase',
+          icon: Icons.add_rounded,
+          bgColor: const Color(0xFF2563EB),
+          textColor: Colors.white,
+          isPrimary: true,
+          onTap: () => _showCreatePurchaseDialog(context, controller),
+        ),
         const SizedBox(width: 12),
-        _BigActionButton(label: 'Purchase Order', icon: Icons.assignment_outlined),
+        _BigActionButton(
+          label: 'Purchase Order',
+          icon: Icons.assignment_outlined,
+          bgColor: const Color(0xFFEFF6FF),
+          textColor: const Color(0xFF2563EB),
+          borderColor: const Color(0xFFBFDBFE),
+          onTap: () => _showCreatePurchaseDialog(context, controller),
+        ),
         const SizedBox(width: 12),
-        _BigActionButton(label: 'GRN / Receive', icon: Icons.download_done_rounded),
+        _BigActionButton(
+          label: 'GRN / Receive',
+          icon: Icons.move_to_inbox_rounded,
+          bgColor: const Color(0xFFECFDF5),
+          textColor: const Color(0xFF059669),
+          borderColor: const Color(0xFFA7F3D0),
+          onTap: () => Get.snackbar('GRN / Receive', 'Receive Goods Note modal ready.'),
+        ),
         const SizedBox(width: 12),
-        _BigActionButton(label: 'Purchase Return', icon: Icons.keyboard_return_rounded, isRed: true),
+        _BigActionButton(
+          label: 'Purchase Return',
+          icon: Icons.assignment_return_outlined,
+          bgColor: const Color(0xFFFEF2F2),
+          textColor: const Color(0xFFDC2626),
+          borderColor: const Color(0xFFFCA5A5),
+          onTap: () => Get.snackbar('Purchase Return', 'Purchase Return modal ready.'),
+        ),
         const SizedBox(width: 12),
-        _BigActionButton(label: 'Import', icon: Icons.upload_file_rounded),
+        _BigActionButton(
+          label: 'Import',
+          icon: Icons.download_rounded,
+          bgColor: const Color(0xFFF5F3FF),
+          textColor: const Color(0xFF7C3AED),
+          borderColor: const Color(0xFFDDD6FE),
+          onTap: () => Get.snackbar('Import Purchases', 'Import CSV/Excel functionality ready.'),
+        ),
       ],
     );
   }
@@ -892,33 +1052,43 @@ class _BottomActionButtons extends StatelessWidget {
 class _BigActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color? color;
+  final Color bgColor;
+  final Color textColor;
+  final Color? borderColor;
   final bool isPrimary;
-  final bool isRed;
+  final VoidCallback onTap;
 
-  const _BigActionButton({required this.label, required this.icon, this.color, this.isPrimary = false, this.isRed = false});
+  const _BigActionButton({
+    required this.label,
+    required this.icon,
+    required this.bgColor,
+    required this.textColor,
+    this.borderColor,
+    this.isPrimary = false,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isPrimary ? (color ?? const Color(0xFF4F46E5)) : isRed ? Colors.red.withOpacity(0.05) : Colors.white;
-    final textColor = isPrimary ? Colors.white : isRed ? Colors.red : const Color(0xFF4F46E5);
-    final borderColor = isPrimary ? Colors.transparent : isRed ? Colors.red.withOpacity(0.1) : const Color(0xFFE2E8F0);
-
     return Expanded(
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18, color: textColor),
-            const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: textColor, fontSize: 13)),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor ?? Colors.transparent),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: textColor),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: textColor, fontSize: 13)),
+            ],
+          ),
         ),
       ),
     );
@@ -955,7 +1125,7 @@ class _ActionButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? Colors.transparent : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE2E8F0)),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
@@ -969,4 +1139,622 @@ class _ActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showCreatePurchaseDialog(BuildContext context, PurchaseController controller) {
+  if (controller.suppliers.isEmpty) {
+    // Add default supplier inline if none exists
+    controller.addNewSupplierInline('RK Enterprise', '9876543210');
+  }
+
+  controller.items.clear();
+  controller.selectedSupplier.value = controller.suppliers.isNotEmpty ? controller.suppliers.first : null;
+  controller.supplierInvoiceNumber.value = '';
+  controller.paidAmount.value = 0.0;
+  controller.isInterStateGst.value = false;
+
+  final invNoController = TextEditingController();
+  final prodNameController = TextEditingController();
+  final barcodeController = TextEditingController();
+  final skuController = TextEditingController();
+  final mrpController = TextEditingController(text: '0.00');
+  final costPriceController = TextEditingController(text: '0.00');
+  final sellingPriceController = TextEditingController(text: '0.00');
+  final qtyController = TextEditingController(text: '1');
+  final discountController = TextEditingController(text: '0.00');
+  final hsnController = TextEditingController();
+  final paidController = TextEditingController(text: '0.00');
+
+  String selectedCategory = controller.categories.isNotEmpty ? controller.categories.first.id : '';
+  String selectedBrand = controller.brands.isNotEmpty ? controller.brands.first.id : '';
+  String selectedUnit = 'pcs';
+  String selectedDiscountType = 'FLAT';
+  double selectedGst = 18.0;
+  Product? selectedExistingProduct;
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long_rounded, color: AppTheme.primaryColor, size: 24),
+            const SizedBox(width: 10),
+            const Text('New Purchase Entry & Stock Intake', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const Spacer(),
+            Obx(() => FilterChip(
+              selected: controller.isInterStateGst.value,
+              label: Text(controller.isInterStateGst.value ? 'Inter-State (IGST)' : 'Intra-State (CGST + SGST)', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11)),
+              onSelected: (val) => controller.isInterStateGst.value = val,
+              selectedColor: Colors.indigo.withValues(alpha: 0.2),
+            )),
+          ],
+        ),
+        content: SizedBox(
+          width: 780,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- SECTION 1: SUPPLIER & INVOICE HEADER ---
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Obx(() => DropdownButtonFormField<Supplier>(
+                                value: controller.selectedSupplier.value,
+                                decoration: InputDecoration(
+                                  labelText: 'Supplier / Vendor Name *',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                items: controller.suppliers.map((s) {
+                                  return DropdownMenuItem(value: s, child: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700)));
+                                }).toList(),
+                                onChanged: (val) => controller.selectedSupplier.value = val,
+                              )),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.person_add_alt_1_rounded, color: AppTheme.primaryColor),
+                              onPressed: () {
+                                final sNameCtrl = TextEditingController();
+                                final sPhoneCtrl = TextEditingController();
+                                showDialog(
+                                  context: context,
+                                  builder: (sCtx) => AlertDialog(
+                                    title: const Text('Add Vendor / Supplier'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(controller: sNameCtrl, decoration: const InputDecoration(labelText: 'Vendor Name (e.g. RK Enterprise)')),
+                                        const SizedBox(height: 12),
+                                        TextField(controller: sPhoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number')),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(sCtx), child: const Text('Cancel')),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          if (sNameCtrl.text.isNotEmpty) {
+                                            await controller.addNewSupplierInline(sNameCtrl.text.trim(), sPhoneCtrl.text.trim());
+                                            if (sCtx.mounted) Navigator.pop(sCtx);
+                                          }
+                                        },
+                                        child: const Text('Save Supplier'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 4,
+                        child: TextField(
+                          controller: invNoController,
+                          onChanged: (v) => controller.supplierInvoiceNumber.value = v,
+                          decoration: InputDecoration(
+                            labelText: 'Vendor Invoice / Bill #',
+                            hintText: 'e.g. RKE/INV-98241',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // --- SECTION 2: MERGED PRODUCT ENTRY (AddProductPage fields) ---
+                const Text('Product Catalog Entry & Price Breakdown', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppTheme.primaryColor)),
+                const SizedBox(height: 10),
+                StatefulBuilder(
+                  builder: (context, setStateItemModal) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 6,
+                                child: Obx(() => DropdownButtonFormField<Product?>(
+                                  value: selectedExistingProduct,
+                                  hint: const Text('Select Existing Product (or type new below)'),
+                                  decoration: InputDecoration(
+                                    labelText: 'Select Existing Product',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<Product?>(value: null, child: Text('+ Create / Type New Product Details')),
+                                    ...controller.products.map((p) {
+                                      return DropdownMenuItem<Product?>(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})'));
+                                    }),
+                                  ],
+                                  onChanged: (val) {
+                                    setStateItemModal(() {
+                                      selectedExistingProduct = val;
+                                      if (val != null) {
+                                        prodNameController.text = val.name;
+                                        barcodeController.text = val.barcode ?? '';
+                                        skuController.text = val.sku ?? '';
+                                        mrpController.text = (val.mrp ?? val.price).toStringAsFixed(2);
+                                        costPriceController.text = (val.costPrice ?? 0.0).toStringAsFixed(2);
+                                        sellingPriceController.text = val.price.toStringAsFixed(2);
+                                        selectedGst = val.gstRate ?? 18.0;
+                                        hsnController.text = val.hsnSac ?? '';
+                                      }
+                                    });
+                                  },
+                                )),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 6,
+                                child: TextField(
+                                  controller: prodNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Product Name *',
+                                    hintText: 'e.g. LED Bulb 15W',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: barcodeController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Barcode',
+                                    hintText: 'e.g. 8901234567',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: skuController,
+                                  decoration: InputDecoration(
+                                    labelText: 'SKU / Code',
+                                    hintText: 'e.g. BULB-15W',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedUnit,
+                                  decoration: InputDecoration(
+                                    labelText: 'Unit',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: ['pcs', 'kg', 'g', 'ltr', 'box', 'meter', 'set', 'pack'].map((u) {
+                                    return DropdownMenuItem(value: u, child: Text(u));
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setStateItemModal(() => selectedUnit = val);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: mrpController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'MRP (₹)',
+                                    prefixText: '₹ ',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: costPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Cost Price (₹)',
+                                    prefixText: '₹ ',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: sellingPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Selling Price (₹)',
+                                    prefixText: '₹ ',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: qtyController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Qty Received',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: discountController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    labelText: 'Discount',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedDiscountType,
+                                  decoration: InputDecoration(
+                                    labelText: 'Disc Type',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: ['FLAT', 'PERCENT'].map((t) {
+                                    return DropdownMenuItem(value: t, child: Text(t == 'FLAT' ? 'Flat (₹)' : '%'));
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setStateItemModal(() => selectedDiscountType = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: DropdownButtonFormField<double>(
+                                  value: selectedGst,
+                                  decoration: InputDecoration(
+                                    labelText: 'GST %',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  items: [0.0, 5.0, 12.0, 18.0, 28.0].map((r) {
+                                    return DropdownMenuItem(value: r, child: Text('${r.toInt()}%'));
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) setStateItemModal(() => selectedGst = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: hsnController,
+                                  decoration: InputDecoration(
+                                    labelText: 'HSN Code',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final name = prodNameController.text.trim();
+                                  if (name.isEmpty) {
+                                    Get.snackbar('Error', 'Please enter product name');
+                                    return;
+                                  }
+
+                                  final qty = double.tryParse(qtyController.text) ?? 1.0;
+                                  final cPrice = double.tryParse(costPriceController.text) ?? 0.0;
+                                  final mrpVal = double.tryParse(mrpController.text) ?? cPrice;
+                                  final sPrice = double.tryParse(sellingPriceController.text) ?? mrpVal;
+                                  final discVal = double.tryParse(discountController.text) ?? 0.0;
+
+                                  final item = PurchaseItem(
+                                    product: selectedExistingProduct,
+                                    productName: name,
+                                    barcode: barcodeController.text.trim(),
+                                    sku: skuController.text.trim(),
+                                    categoryId: selectedCategory,
+                                    brandId: selectedBrand,
+                                    unit: selectedUnit,
+                                    quantity: qty,
+                                    mrp: mrpVal,
+                                    costPrice: cPrice,
+                                    sellingPrice: sPrice,
+                                    discountType: selectedDiscountType,
+                                    discountValue: discVal,
+                                    gstRate: selectedGst,
+                                    hsnCode: hsnController.text.trim(),
+                                  );
+
+                                  controller.addItem(item);
+
+                                  // Reset item inputs
+                                  prodNameController.clear();
+                                  barcodeController.clear();
+                                  skuController.clear();
+                                  mrpController.text = '0.00';
+                                  costPriceController.text = '0.00';
+                                  sellingPriceController.text = '0.00';
+                                  qtyController.text = '1';
+                                  discountController.text = '0.00';
+                                  hsnController.clear();
+                                  setStateItemModal(() => selectedExistingProduct = null);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Text('+ Add Item', style: TextStyle(fontWeight: FontWeight.w900)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // --- SECTION 3: INVOICE TABLE & LIVE TAX SUMMARY CARD ---
+                Obx(() {
+                  if (controller.items.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: Text('No items added to invoice yet.', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600))),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.withValues(alpha: 0.2)), borderRadius: BorderRadius.circular(12)),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                              child: const Row(
+                                children: [
+                                  Expanded(flex: 4, child: Text('Item Name', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('MRP / Cost', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('Qty x Price', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('Discount', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('Taxable', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('GST Tax', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  Expanded(flex: 2, child: Text('Total (₹)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                  SizedBox(width: 30),
+                                ],
+                              ),
+                            ),
+                            ...controller.items.asMap().entries.map((entry) {
+                              final idx = entry.key;
+                              final item = entry.value;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.1)))),
+                                child: Row(
+                                  children: [
+                                    Expanded(flex: 4, child: Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                                    Expanded(flex: 2, child: Text('MRP ₹${item.mrp.toStringAsFixed(0)} / ₹${item.costPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11))),
+                                    Expanded(flex: 2, child: Text('${item.quantity} x ₹${item.costPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11))),
+                                    Expanded(flex: 2, child: Text('₹${item.discountAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: Colors.orange))),
+                                    Expanded(flex: 2, child: Text('₹${item.taxableAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11))),
+                                    Expanded(flex: 2, child: Text('${item.gstRate.toInt()}% (₹${item.taxAmount.toStringAsFixed(2)})', style: const TextStyle(fontSize: 11, color: Colors.indigo))),
+                                    Expanded(flex: 2, child: Text('₹${item.totalItemAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                                      onPressed: () => controller.removeItem(idx),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // FINANCIAL & GST SUMMARY BREAKDOWN CARD
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.15)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Subtotal Gross Amount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text('₹ ${NumberFormat('#,##,##0.00').format(controller.subtotalGrossAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Total Discount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange)),
+                                Text('- ₹ ${NumberFormat('#,##,##0.00').format(controller.totalDiscountAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.orange)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Taxable Value:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text('₹ ${NumberFormat('#,##,##0.00').format(controller.totalTaxableAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            if (!controller.isInterStateGst.value) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('CGST Amount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.indigo)),
+                                  Text('₹ ${NumberFormat('#,##,##0.00').format(controller.totalCgstAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.indigo)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('SGST Amount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.indigo)),
+                                  Text('₹ ${NumberFormat('#,##,##0.00').format(controller.totalSgstAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.indigo)),
+                                ],
+                              ),
+                            ] else ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('IGST Amount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.indigo)),
+                                  Text('₹ ${NumberFormat('#,##,##0.00').format(controller.totalTaxAmount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.indigo)),
+                                ],
+                              ),
+                            ],
+                            const Divider(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Grand Total Invoice Amount:', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                                Text('₹ ${NumberFormat('#,##,##0.00').format(controller.grandTotalAmount)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.primaryColor)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // SECTION 4: PAYMENT PAYOUT & VENDOR LEDGER
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: TextField(
+                              controller: paidController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (v) {
+                                controller.paidAmount.value = double.tryParse(v) ?? 0.0;
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Amount Paid to Vendor (₹)',
+                                prefixText: '₹ ',
+                                hintText: 'Enter cash/UPI payout amount',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 4,
+                            child: Obx(() => DropdownButtonFormField<String>(
+                              value: controller.paymentMethod.value,
+                              decoration: InputDecoration(
+                                labelText: 'Payment Mode',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: ['CASH', 'UPI', 'BANK_TRANSFER', 'CREDIT'].map((m) {
+                                return DropdownMenuItem(value: m, child: Text(m));
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) controller.paymentMethod.value = val;
+                              },
+                            )),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton.icon(
+            onPressed: () async {
+              if (controller.items.isEmpty) {
+                Get.snackbar('Empty Invoice', 'Please add at least one product item.');
+                return;
+              }
+              await controller.savePurchase();
+              if (ctx.mounted) Navigator.of(ctx).pop();
+            },
+            icon: const Icon(Icons.check_circle_rounded, size: 18),
+            label: const Text('Save Purchase & Update Catalog + Stock', style: TextStyle(fontWeight: FontWeight.w900)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

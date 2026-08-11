@@ -30,20 +30,18 @@ void main() async {
 
     await windowManager.ensureInitialized();
 
-    final width = prefService.windowWidth;
-    final height = prefService.windowHeight;
-
-    final windowOptions = WindowOptions(
-      size: Size(width, height),
-      minimumSize: const Size(1920, 1080),
+    const windowOptions = WindowOptions(
+      fullScreen: true,
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
+      titleBarStyle: TitleBarStyle.hidden,
       title: 'Kanglei POS',
     );
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setFullScreen(true);
+      await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
       await windowManager.show();
       await windowManager.focus();
     });
