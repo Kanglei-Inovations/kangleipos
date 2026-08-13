@@ -187,25 +187,46 @@ class _PremiumHeader extends StatelessWidget {
   }
 
   Widget _buildMobileHeader(BuildContext context) {
-    return Column(
+    final themeController = context.watch<AppThemeController>();
+    return Row(
       children: [
-        Row(
-          children: [
-            _HeaderIconButton(
-              icon: Icons.dashboard_customize_rounded,
-              onTap: onMenuPressed,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: _HeaderTitle(title: title, compact: true)),
-            if (headerAction != null) ...[
-              headerAction!,
-              const SizedBox(width: 8),
-            ],
-            const _HeaderActions(compact: true),
-          ],
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.bolt_rounded, color: AppTheme.primaryColor, size: 20),
         ),
-        const SizedBox(height: 12),
-        const _GlobalSearchBar(),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+              const Text(
+                'Kanglei POS Lite',
+                style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+        if (headerAction != null) ...[
+          headerAction!,
+          const SizedBox(width: 8),
+        ],
+        _HeaderIconButton(
+          icon: themeController.isDarkMode
+              ? Icons.light_mode_outlined
+              : Icons.dark_mode_outlined,
+          onTap: themeController.toggleTheme,
+        ),
       ],
     );
   }

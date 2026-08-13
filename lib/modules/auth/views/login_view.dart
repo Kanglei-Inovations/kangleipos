@@ -2855,6 +2855,8 @@ class _LoginQrScanPageState extends State<_LoginQrScanPage> {
         for (final ip in ipsRaw) {
           if (!candidateIps.contains(ip)) candidateIps.add(ip);
         }
+        if (!candidateIps.contains('127.0.0.1')) candidateIps.add('127.0.0.1');
+        if (!candidateIps.contains('localhost')) candidateIps.add('localhost');
 
         setState(() => _scanned = true);
         await _ctrl.stop();

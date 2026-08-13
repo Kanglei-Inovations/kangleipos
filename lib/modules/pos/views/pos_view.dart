@@ -135,16 +135,22 @@ class PosView extends GetView<PosController> {
         children: [
           Container(
             color: theme.cardColor,
-            child: TabBar(
-              labelColor: theme.colorScheme.primary,
-              unselectedLabelColor: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-              indicatorColor: theme.colorScheme.primary,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'PRODUCTS', icon: Icon(Icons.grid_view_rounded, size: 20)),
-                Tab(text: 'BILLING', icon: Icon(Icons.receipt_long_rounded, size: 20)),
-              ],
-            ),
+            child: Obx(() {
+              final cartCount = controller.cart.fold<int>(0, (sum, i) => sum + i.quantity.toInt());
+              return TabBar(
+                labelColor: theme.colorScheme.primary,
+                unselectedLabelColor: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                indicatorColor: theme.colorScheme.primary,
+                indicatorWeight: 3,
+                tabs: [
+                  const Tab(text: 'PRODUCTS', icon: Icon(Icons.grid_view_rounded, size: 20)),
+                  Tab(
+                    text: cartCount > 0 ? 'BILLING ($cartCount)' : 'BILLING',
+                    icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                  ),
+                ],
+              );
+            }),
           ),
           Expanded(
             child: TabBarView(

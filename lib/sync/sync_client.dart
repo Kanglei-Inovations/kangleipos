@@ -47,7 +47,7 @@ class SyncClientService extends GetxService {
       final resp = await http.get(
         Uri.parse('$baseUrl/sync/all'),
         headers: _headers,
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 30));
 
       if (resp.statusCode != 200) {
         syncStatus.value = 'Server error: ${resp.statusCode}';

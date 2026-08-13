@@ -62,17 +62,27 @@ class SyncServerService extends GetxService {
   }
 
   /// QR payload that mobile scans
-  String get qrPayload => jsonEncode({
-    'ip': serverIp.value,
-    'ips': availableIps.toList(),
-    'port': _port,
-    'token': serverToken.value,
-  });
+  String get qrPayload {
+    final ips = <String>{
+      serverIp.value,
+      ...availableIps,
+      '127.0.0.1',
+      'localhost',
+      '10.0.2.2',
+    }.toList();
+
+    return jsonEncode({
+      'ip': serverIp.value,
+      'ips': ips,
+      'port': _port,
+      'token': serverToken.value,
+    });
+  }
 
   Future<void> startServer() async {
     if (isRunning.value) return;
     try {
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, _port);
+      _server = await HttpServer.bind(InternetAddress.anyIPv4, _port, shared: true);
       isRunning.value = true;
       _logger.i('Sync Server started on ${serverIp.value}:$_port token=${serverToken.value}');
 
@@ -87,6 +97,15 @@ class SyncServerService extends GetxService {
     req.response.headers.add('Access-Control-Allow-Origin', '*');
     req.response.headers.add('Content-Type', 'application/json');
 
+    final path = req.uri.path;
+    final method = req.method;
+
+    if (method == 'GET' && path == '/ping') {
+      req.response.write(jsonEncode({'status': 'ok', 'time': DateTime.now().toIso8601String()}));
+      await req.response.close();
+      return;
+    }
+
     final token = req.headers.value('X-Sync-Token') ?? '';
     if (token != serverToken.value) {
       req.response.statusCode = 401;
@@ -95,16 +114,11 @@ class SyncServerService extends GetxService {
       return;
     }
 
-    final path = req.uri.path;
-    final method = req.method;
-
     try {
       if (method == 'GET' && path == '/sync/all') {
         await _handleFullSync(req);
       } else if (method == 'POST' && path == '/sync/push') {
         await _handlePush(req);
-      } else if (method == 'GET' && path == '/ping') {
-        req.response.write(jsonEncode({'status': 'ok', 'time': DateTime.now().toIso8601String()}));
       } else {
         req.response.statusCode = 404;
         req.response.write(jsonEncode({'error': 'Not found'}));
