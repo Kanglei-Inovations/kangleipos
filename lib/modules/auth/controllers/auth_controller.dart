@@ -26,7 +26,9 @@ class AuthController extends GetxController {
   }
 
   void _checkInitialState() {
-    if (!_prefs.isSetupComplete) {
+    if (GetPlatform.isMobile) {
+      _checkSession();
+    } else if (!_prefs.isSetupComplete) {
       Get.offAllNamed(AppRoutes.SETUP);
     } else {
       _checkSession();

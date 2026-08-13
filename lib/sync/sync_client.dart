@@ -47,7 +47,7 @@ class SyncClientService extends GetxService {
       final resp = await http.get(
         Uri.parse('$baseUrl/sync/all'),
         headers: _headers,
-      ).timeout(const Duration(seconds: 30));
+      ).timeout(const Duration(seconds: 8));
 
       if (resp.statusCode != 200) {
         syncStatus.value = 'Server error: ${resp.statusCode}';
@@ -107,7 +107,7 @@ class SyncClientService extends GetxService {
           mrp: d.Value((p['mrp'] as num?)?.toDouble()),
           stockQuantity: d.Value((p['stockQuantity'] as num).toDouble()),
           unit: d.Value(p['unit'] ?? 'pcs'),
-          gstRate: d.Value((p['gstRate'] as num?)?.toDouble()),
+          gstRate: d.Value((p['gstRate'] as num?)?.toDouble() ?? 0.0),
           hsnSac: d.Value(p['hsnSac']),
           categoryId: d.Value(p['categoryId']),
           brandId: d.Value(p['brandId']),
@@ -143,7 +143,7 @@ class SyncClientService extends GetxService {
           phone: d.Value(c['phone'] ?? ''),
           email: d.Value(c['email']),
           address: d.Value(c['address']),
-          loyaltyPoints: d.Value(c['loyaltyPoints'] as int? ?? 0),
+          loyaltyPoints: d.Value((c['loyaltyPoints'] as num?)?.toDouble() ?? 0.0),
         ),
       );
     }
@@ -158,7 +158,7 @@ class SyncClientService extends GetxService {
           purchaseNumber: p['purchaseNumber'],
           supplierId: p['supplierId'],
           grandTotal: (p['grandTotal'] as num).toDouble(),
-          status: p['status'],
+          status: d.Value(p['status'] ?? 'RECEIVED'),
         ),
       );
     }

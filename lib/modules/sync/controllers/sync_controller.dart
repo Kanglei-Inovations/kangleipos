@@ -75,6 +75,10 @@ class SyncController extends GetxController {
     return await _client.ping();
   }
 
+  Future<bool> pushToDesktop(List<Map<String, dynamic>> sales, List<Map<String, dynamic>> purchases) async {
+    return await _client.pushToDesktop(sales, purchases);
+  }
+
   void startHost() {
     startDesktopServer();
   }

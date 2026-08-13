@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:drift/drift.dart' as d;
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
@@ -18,6 +19,8 @@ class SyncServerService extends GetxService {
 
   AppDatabase get _db => Get.find<AppDatabase>();
 
+  final RxList<String> availableIps = <String>[].obs;
+
   Future<SyncServerService> init() async {
     await _detectIp();
     serverToken.value = const Uuid().v4().substring(0, 8).toUpperCase();
@@ -25,6 +28,7 @@ class SyncServerService extends GetxService {
   }
 
   Future<void> _detectIp() async {
+    availableIps.clear();
     try {
       final interfaces = await NetworkInterface.list(
         type: InternetAddressType.IPv4,
@@ -32,19 +36,35 @@ class SyncServerService extends GetxService {
       );
       for (var iface in interfaces) {
         for (var addr in iface.addresses) {
-          if (!addr.isLoopback) {
-            serverIp.value = addr.address;
-            return;
+          if (!addr.isLoopback && !addr.address.startsWith('127.')) {
+            if (!availableIps.contains(addr.address)) {
+              availableIps.add(addr.address);
+            }
           }
         }
       }
     } catch (_) {}
-    serverIp.value = '127.0.0.1';
+
+    if (availableIps.isEmpty) {
+      availableIps.add('127.0.0.1');
+    }
+
+    // Prioritize active non-virtual network interfaces over Windows Hotspot 192.168.137.x or APIPA
+    availableIps.sort((a, b) {
+      bool aIsVirtual = a.startsWith('192.168.137.') || a.startsWith('169.254.');
+      bool bIsVirtual = b.startsWith('192.168.137.') || b.startsWith('169.254.');
+      if (aIsVirtual && !bIsVirtual) return 1;
+      if (!aIsVirtual && bIsVirtual) return -1;
+      return 0;
+    });
+
+    serverIp.value = availableIps.first;
   }
 
   /// QR payload that mobile scans
   String get qrPayload => jsonEncode({
     'ip': serverIp.value,
+    'ips': availableIps.toList(),
     'port': _port,
     'token': serverToken.value,
   });
@@ -103,7 +123,7 @@ class SyncServerService extends GetxService {
     final purchases = await _db.select(_db.purchases).get();
     final categories = await _db.select(_db.categories).get();
     final brands = await _db.select(_db.brands).get();
-    final sales = await _db.select(_db.sales).get();
+    final invoices = await _db.select(_db.invoices).get();
 
     final payload = {
       'products': products.map((p) => _productToMap(p)).toList(),
@@ -112,7 +132,7 @@ class SyncServerService extends GetxService {
       'purchases': purchases.map((p) => _purchaseToMap(p)).toList(),
       'categories': categories.map((c) => {'id': c.id, 'name': c.name}).toList(),
       'brands': brands.map((b) => {'id': b.id, 'name': b.name}).toList(),
-      'sales': sales.map((s) => _saleToMap(s)).toList(),
+      'sales': invoices.map((i) => _invoiceToMap(i)).toList(),
       'syncedAt': DateTime.now().toIso8601String(),
     };
 
@@ -132,7 +152,7 @@ class SyncServerService extends GetxService {
               purchaseNumber: p['purchaseNumber'],
               supplierId: p['supplierId'],
               grandTotal: (p['grandTotal'] as num).toDouble(),
-              status: p['status'],
+              status: d.Value(p['status'] ?? 'RECEIVED'),
             ),
           );
         } catch (_) {}
@@ -141,12 +161,13 @@ class SyncServerService extends GetxService {
     if (data['sales'] != null) {
       for (final s in (data['sales'] as List)) {
         try {
-          await _db.into(_db.sales).insertOnConflictUpdate(
-            SalesCompanion.insert(
+          await _db.into(_db.invoices).insertOnConflictUpdate(
+            InvoicesCompanion.insert(
               id: s['id'],
               invoiceNumber: s['invoiceNumber'],
+              subtotal: (s['subtotal'] as num?)?.toDouble() ?? (s['grandTotal'] as num).toDouble(),
               grandTotal: (s['grandTotal'] as num).toDouble(),
-              status: s['status'],
+              status: d.Value(s['status'] ?? 'PAID'),
             ),
           );
         } catch (_) {}
@@ -179,9 +200,9 @@ class SyncServerService extends GetxService {
     'purchaseDate': p.purchaseDate.toIso8601String(),
   };
 
-  Map<String, dynamic> _saleToMap(Sale s) => {
-    'id': s.id, 'invoiceNumber': s.invoiceNumber,
-    'grandTotal': s.grandTotal, 'status': s.status,
+  Map<String, dynamic> _invoiceToMap(Invoice i) => {
+    'id': i.id, 'invoiceNumber': i.invoiceNumber,
+    'subtotal': i.subtotal, 'grandTotal': i.grandTotal, 'status': i.status,
   };
 
   void stopServer() {

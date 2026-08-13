@@ -137,8 +137,11 @@ class _PremiumHeader extends StatelessWidget {
 
     return Container(
       clipBehavior: Clip.antiAlias,
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      height: isMobile ? null : 72,
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 24,
+        vertical: isMobile ? 10 : 0,
+      ),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
         borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
@@ -614,7 +617,6 @@ class _MobileNavigation extends StatelessWidget {
     final destinations = [
       (Icons.dashboard_rounded, 'Dashboard', AppRoutes.DASHBOARD),
       (Icons.point_of_sale_rounded, 'Selling', AppRoutes.POS),
-      (Icons.shopping_bag_rounded, 'Purchases', AppRoutes.PURCHASES),
       (Icons.sync_rounded, 'Sync', AppRoutes.SYNC),
     ];
 
@@ -757,29 +759,31 @@ class _DashboardBackground extends StatelessWidget {
                 ],
         ),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -120,
-            right: -80,
-            child: _SoftGlow(
-              color: isDark
-                  ? AppTheme.primaryColor.withOpacity(0.22)
-                  : const Color(0xFF93C5FD).withOpacity(0.36),
-              size: 360,
+      child: ExcludeSemantics(
+        child: Stack(
+          children: [
+            Positioned(
+              top: -120,
+              right: -80,
+              child: _SoftGlow(
+                color: isDark
+                    ? AppTheme.primaryColor.withValues(alpha: 0.22)
+                    : const Color(0xFF93C5FD).withValues(alpha: 0.36),
+                size: 360,
+              ),
             ),
-          ),
-          Positioned(
-            bottom: -180,
-            left: 180,
-            child: _SoftGlow(
-              color: isDark
-                  ? AppTheme.accentColor.withOpacity(0.16)
-                  : const Color(0xFFC4B5FD).withOpacity(0.32),
-              size: 420,
+            Positioned(
+              bottom: -180,
+              left: 180,
+              child: _SoftGlow(
+                color: isDark
+                    ? AppTheme.accentColor.withValues(alpha: 0.16)
+                    : const Color(0xFFC4B5FD).withValues(alpha: 0.32),
+                size: 420,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

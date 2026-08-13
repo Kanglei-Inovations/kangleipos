@@ -176,61 +176,67 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                       ),
                                     ),
                                     SizedBox(width: isLaptop ? 20 : 36),
-                                    _LoginCard(
-                                      formKey: _formKey,
-                                      tabController: _tabController,
-                                      emailController: _emailController,
-                                      passwordController: _passwordController,
-                                      pin: _pin,
-                                      pinError: _pinError,
-                                      rememberDevice: _rememberDevice,
-                                      rememberPin: _rememberPin,
-                                      onRememberDeviceChanged: (value) {
-                                        setState(() => _rememberDevice = value);
-                                      },
-                                      onRememberPinChanged: (value) {
-                                        setState(() => _rememberPin = value);
-                                      },
-                                      onPasswordSubmit: _submitPassword,
-                                      onPinKey: _onPinKey,
-                                      onPinDelete: _deletePin,
-                                      onPinSubmit: _submitPin,
-                                      isMobile: false,
-                                      isTablet: isTablet,
-                                      isLaptop: isLaptop,
+                                    Center(
+                                      child: _LoginCard(
+                                        formKey: _formKey,
+                                        tabController: _tabController,
+                                        emailController: _emailController,
+                                        passwordController: _passwordController,
+                                        pin: _pin,
+                                        pinError: _pinError,
+                                        rememberDevice: _rememberDevice,
+                                        rememberPin: _rememberPin,
+                                        onRememberDeviceChanged: (value) {
+                                          setState(() => _rememberDevice = value);
+                                        },
+                                        onRememberPinChanged: (value) {
+                                          setState(() => _rememberPin = value);
+                                        },
+                                        onPasswordSubmit: _submitPassword,
+                                        onPinKey: _onPinKey,
+                                        onPinDelete: _deletePin,
+                                        onPinSubmit: _submitPin,
+                                        isMobile: false,
+                                        isTablet: isTablet,
+                                        isLaptop: isLaptop,
+                                      ),
                                     ),
                                   ],
                                 )
                               else
-                                Center(
-                                  child: _LoginCard(
-                                    formKey: _formKey,
-                                    tabController: _tabController,
-                                    emailController: _emailController,
-                                    passwordController: _passwordController,
-                                    pin: _pin,
-                                    pinError: _pinError,
-                                    rememberDevice: _rememberDevice,
-                                    rememberPin: _rememberPin,
-                                    onRememberDeviceChanged: (value) {
-                                      setState(() => _rememberDevice = value);
-                                    },
-                                    onRememberPinChanged: (value) {
-                                      setState(() => _rememberPin = value);
-                                    },
-                                    onPasswordSubmit: _submitPassword,
-                                    onPinKey: _onPinKey,
-                                    onPinDelete: _deletePin,
-                                    onPinSubmit: _submitPin,
-                                    isMobile: isMobile,
-                                    isTablet: isTablet,
-                                    isLaptop: isLaptop,
-                                  ),
+                                Column(
+                                  children: [
+                                    if (isMobile) ...[
+                                      const _MobileQrLoginButton(),
+                                      const SizedBox(height: 16),
+                                    ],
+                                    Center(
+                                      child: _LoginCard(
+                                        formKey: _formKey,
+                                        tabController: _tabController,
+                                        emailController: _emailController,
+                                        passwordController: _passwordController,
+                                        pin: _pin,
+                                        pinError: _pinError,
+                                        rememberDevice: _rememberDevice,
+                                        rememberPin: _rememberPin,
+                                        onRememberDeviceChanged: (value) {
+                                          setState(() => _rememberDevice = value);
+                                        },
+                                        onRememberPinChanged: (value) {
+                                          setState(() => _rememberPin = value);
+                                        },
+                                        onPasswordSubmit: _submitPassword,
+                                        onPinKey: _onPinKey,
+                                        onPinDelete: _deletePin,
+                                        onPinSubmit: _submitPin,
+                                        isMobile: isMobile,
+                                        isTablet: isTablet,
+                                        isLaptop: isLaptop,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              if (isMobile) ...[
-                                const SizedBox(height: 16),
-                                _MobileQrLoginButton(),
-                              ],
                               _FeatureCards(
                                 isMobile: isMobile,
                                 isTablet: isTablet,
@@ -268,62 +274,70 @@ class _LoginBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        return DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF050816),
-                Color(0xFF0B1120),
-                Color(0xFF111827),
-                Color(0xFF111D4D),
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) {
+          return DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF050816),
+                  Color(0xFF0B1120),
+                  Color(0xFF111827),
+                  Color(0xFF111D4D),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -150,
+                  right: -180,
+                  child: Transform.translate(
+                    offset: Offset(0, math.sin(animation.value * math.pi * 2) * 18),
+                    child: _GlowOrb(
+                      size: isMobile ? 320 : isTablet ? 420 : 560,
+                      colors: [
+                        const Color(0xFF3B82F6).withOpacity(isMobile ? 0.35 : 0.60),
+                        const Color(0xFF6366F1).withOpacity(isMobile ? 0.12 : 0.24),
+                        Colors.transparent,
+                      ],
+                      blur: isMobile ? 12.0 : isTablet ? 18.0 : 24.0,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -180,
+                  left: -180,
+                  child: Transform.translate(
+                    offset: Offset(math.cos(animation.value * math.pi * 2) * 18, 0),
+                    child: _GlowOrb(
+                      size: isMobile ? 300 : isTablet ? 400 : 520,
+                      colors: [
+                        const Color(0xFF8B5CF6).withOpacity(isMobile ? 0.25 : 0.42),
+                        const Color(0xFF312E81).withOpacity(isMobile ? 0.10 : 0.18),
+                        Colors.transparent,
+                      ],
+                      blur: isMobile ? 12.0 : isTablet ? 18.0 : 24.0,
+                    ),
+                  ),
+                ),
+                CustomPaint(
+                  painter: _ParticlePainter(
+                    animation.value,
+                    isMobile: isMobile,
+                    isTablet: isTablet,
+                  ),
+                  size: Size.infinite,
+                ),
               ],
             ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: -150 + math.sin(animation.value * math.pi * 2) * 18,
-                right: -180,
-                child: _GlowOrb(
-                  size: isMobile ? 320 : isTablet ? 420 : 560,
-                  colors: [
-                    const Color(0xFF3B82F6).withOpacity(isMobile ? 0.35 : 0.60),
-                    const Color(0xFF6366F1).withOpacity(isMobile ? 0.12 : 0.24),
-                    Colors.transparent,
-                  ],
-                  blur: isMobile ? 12.0 : isTablet ? 18.0 : 24.0,
-                ),
-              ),
-              Positioned(
-                bottom: -180,
-                left: -180 + math.cos(animation.value * math.pi * 2) * 18,
-                child: _GlowOrb(
-                  size: isMobile ? 300 : isTablet ? 400 : 520,
-                  colors: [
-                    const Color(0xFF8B5CF6).withOpacity(isMobile ? 0.25 : 0.42),
-                    const Color(0xFF312E81).withOpacity(isMobile ? 0.10 : 0.18),
-                    Colors.transparent,
-                  ],
-                  blur: isMobile ? 12.0 : isTablet ? 18.0 : 24.0,
-                ),
-              ),
-              CustomPaint(
-                painter: _ParticlePainter(
-                  animation.value,
-                  isMobile: isMobile,
-                  isTablet: isTablet,
-                ),
-                size: Size.infinite,
-              ),
-            ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -1490,8 +1504,6 @@ class _LoginMethodTabs extends StatelessWidget {
           ),
           child: TabBar(
             controller: controller,
-            isScrollable: isMobile,
-            tabAlignment: isMobile ? TabAlignment.start : TabAlignment.fill,
             dividerColor: Colors.transparent,
             indicatorSize: TabBarIndicatorSize.tab,
             indicator: BoxDecoration(
@@ -1520,23 +1532,19 @@ class _LoginMethodTabs extends StatelessWidget {
             tabs: [
               for (final tab in tabs)
                 Tab(
-                  height: screenHeight < 800 ? 40 : 48,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: isMobile ? 112 : 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(tab.icon, size: 18),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            tab.label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(tab.icon, size: 18),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          tab.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -2243,34 +2251,37 @@ class _QrScannerFrameState extends State<_QrScannerFrame>
               painter: _QrCornerPainter(),
             ),
           ),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Positioned(
-                left: 18,
-                right: 18,
-                top: (screenHeight < 800 ? 16.0 : 24.0) +
-                    (_controller.value * (frameSize - (screenHeight < 800 ? 32.0 : 48.0))),
-                child: Container(
-                  height: 2.5,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Color(0xFF22D3EE),
-                        Colors.transparent,
+          Positioned(
+            left: 18,
+            right: 18,
+            top: screenHeight < 800 ? 16.0 : 24.0,
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                return Transform.translate(
+                  offset: Offset(0, _controller.value * (frameSize - (screenHeight < 800 ? 32.0 : 48.0))),
+                  child: Container(
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Color(0xFF22D3EE),
+                          Colors.transparent,
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF22D3EE).withOpacity(0.62),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
                       ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF22D3EE).withOpacity(0.62),
-                        blurRadius: 10,
-                      ),
-                    ],
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -2761,35 +2772,46 @@ class _MobileQrLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            const Expanded(child: Divider(color: Colors.white24)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text('or',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
-            ),
-            const Expanded(child: Divider(color: Colors.white24)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () => _openQrScanner(context),
-            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
-            label: const Text('Scan QR to Connect Desktop',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF38BDF8), size: 42),
+          const SizedBox(height: 10),
+          const Text(
+            'Connect with Desktop App',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Scan the QR code shown on your Desktop Kanglei POS to sync all products, stock & sales automatically.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _openQrScanner(context),
+              icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 20),
+              label: const Text('SCAN DESKTOP QR NOW',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 4,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -2823,9 +2845,16 @@ class _LoginQrScanPageState extends State<_LoginQrScanPage> {
       if (raw == null) continue;
       try {
         final data = jsonDecode(raw) as Map<String, dynamic>;
-        final ip = data['ip'] as String;
+        final primaryIp = data['ip'] as String?;
+        final ipsRaw = (data['ips'] as List?)?.map((e) => e.toString()).toList() ?? [];
         final port = data['port'] as int;
         final token = data['token'] as String;
+
+        final candidateIps = <String>[];
+        if (primaryIp != null && primaryIp.isNotEmpty) candidateIps.add(primaryIp);
+        for (final ip in ipsRaw) {
+          if (!candidateIps.contains(ip)) candidateIps.add(ip);
+        }
 
         setState(() => _scanned = true);
         await _ctrl.stop();
@@ -2836,17 +2865,31 @@ class _LoginQrScanPageState extends State<_LoginQrScanPage> {
         if (!Get.isRegistered<SyncController>()) Get.put(SyncController());
         final syncCtrl = Get.find<SyncController>();
 
-        Get.snackbar('Connecting...', 'Syncing data from desktop, please wait...',
-            duration: const Duration(seconds: 3));
+        Get.snackbar('Connecting...', 'Attempting connection to desktop...',
+            duration: const Duration(seconds: 4));
 
-        final success = await syncCtrl.connectAndSync(ip, port, token);
+        bool success = false;
+        String connectedIp = '';
+        for (final targetIp in candidateIps) {
+          success = await syncCtrl.connectAndSync(targetIp, port, token);
+          if (success) {
+            connectedIp = targetIp;
+            break;
+          }
+        }
+
         if (success) {
+          Get.snackbar('Connected!', 'Synced data from desktop ($connectedIp)',
+              backgroundColor: Colors.green.withValues(alpha: 0.9),
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2));
           Get.offAllNamed('/dashboard');
         } else {
           Get.snackbar('Sync Failed',
-              'Could not connect. Make sure both devices are on the same WiFi network.',
+              'Could not connect. Tried IPs: ${candidateIps.join(", ")}. Ensure USB tethering or WiFi connection is active.',
               backgroundColor: Colors.red.withValues(alpha: 0.9),
-              colorText: Colors.white);
+              colorText: Colors.white,
+              duration: const Duration(seconds: 6));
         }
         return;
       } catch (_) {

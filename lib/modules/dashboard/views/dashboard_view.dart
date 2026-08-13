@@ -95,7 +95,7 @@ class _KpiGrid extends StatelessWidget {
         crossAxisCount: columns,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 180,
+        mainAxisExtent: width < 560 ? 140 : 180,
       ),
       itemBuilder: (context, index) {
         return _KpiCard(data: _kpis[index], index: index)
