@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
@@ -19,6 +20,19 @@ import 'sync/sync_client.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Ensure Phone Status Bar is visible
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+  );
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+  );
 
   final prefService = await PreferenceService().init();
   Get.put(prefService, permanent: true);
@@ -55,7 +69,9 @@ void main() async {
   // Init Sync Services
   final syncServer = await SyncServerService().init();
   Get.put<SyncServerService>(syncServer, permanent: true);
-  Get.put<SyncClientService>(SyncClientService(), permanent: true);
+
+  final syncClient = await SyncClientService().init();
+  Get.put<SyncClientService>(syncClient, permanent: true);
 
   ResponsiveSizingConfig.instance.setCustomBreakpoints(
     const ScreenBreakpoints(desktop: 1024, tablet: 768, watch: 200),

@@ -56,6 +56,7 @@ dependencies:
   responsive_framework: ^1.5.1
   provider: ^6.1.5+1
   flutter_animate: ^4.5.2
+  flutter_contacts: ^1.1.9
   
   # Sync & Networking
   http: ^1.2.0

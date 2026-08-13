@@ -24,6 +24,9 @@ class SyncServerService extends GetxService {
   Future<SyncServerService> init() async {
     await _detectIp();
     serverToken.value = const Uuid().v4().substring(0, 8).toUpperCase();
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      await startServer();
+    }
     return this;
   }
 
@@ -157,6 +160,28 @@ class SyncServerService extends GetxService {
     final body = await utf8.decoder.bind(req).join();
     final data = jsonDecode(body) as Map<String, dynamic>;
     // Mobile pushed new purchases/sales → insert into desktop DB
+    if (data['customers'] != null) {
+      for (final c in (data['customers'] as List)) {
+        try {
+          await _db.into(_db.customers).insertOnConflictUpdate(
+            CustomersCompanion(
+              id: d.Value(c['id']),
+              name: d.Value(c['name']),
+              phone: d.Value(c['phone']),
+              email: d.Value(c['email']),
+              address: d.Value(c['address']),
+              gstNumber: d.Value(c['gstNumber']),
+              balanceDue: d.Value((c['balanceDue'] as num?)?.toDouble() ?? 0.0),
+              creditLimit: d.Value((c['creditLimit'] as num?)?.toDouble() ?? 0.0),
+              loyaltyPoints: d.Value((c['loyaltyPoints'] as num?)?.toDouble() ?? 0.0),
+              createdAt: c['createdAt'] != null
+                  ? d.Value(DateTime.parse(c['createdAt']))
+                  : const d.Value.absent(),
+            ),
+          );
+        } catch (_) {}
+      }
+    }
     if (data['purchases'] != null) {
       for (final p in (data['purchases'] as List)) {
         try {
@@ -179,9 +204,13 @@ class SyncServerService extends GetxService {
             InvoicesCompanion.insert(
               id: s['id'],
               invoiceNumber: s['invoiceNumber'],
+              customerId: d.Value(s['customerId']),
               subtotal: (s['subtotal'] as num?)?.toDouble() ?? (s['grandTotal'] as num).toDouble(),
+              taxTotal: d.Value((s['taxTotal'] as num?)?.toDouble() ?? 0.0),
               grandTotal: (s['grandTotal'] as num).toDouble(),
+              paymentMethod: d.Value(s['paymentMethod'] ?? 'CASH'),
               status: d.Value(s['status'] ?? 'PAID'),
+              createdAt: s['createdAt'] != null ? d.Value(DateTime.parse(s['createdAt'])) : const d.Value.absent(),
             ),
           );
         } catch (_) {}
@@ -205,7 +234,10 @@ class SyncServerService extends GetxService {
 
   Map<String, dynamic> _customerToMap(Customer c) => {
     'id': c.id, 'name': c.name, 'phone': c.phone, 'email': c.email,
-    'address': c.address, 'loyaltyPoints': c.loyaltyPoints,
+    'address': c.address, 'gstNumber': c.gstNumber,
+    'balanceDue': c.balanceDue, 'creditLimit': c.creditLimit,
+    'loyaltyPoints': c.loyaltyPoints,
+    'createdAt': c.createdAt.toIso8601String(),
   };
 
   Map<String, dynamic> _purchaseToMap(Purchase p) => {
@@ -216,7 +248,12 @@ class SyncServerService extends GetxService {
 
   Map<String, dynamic> _invoiceToMap(Invoice i) => {
     'id': i.id, 'invoiceNumber': i.invoiceNumber,
-    'subtotal': i.subtotal, 'grandTotal': i.grandTotal, 'status': i.status,
+    'customerId': i.customerId,
+    'subtotal': i.subtotal, 'taxTotal': i.taxTotal,
+    'grandTotal': i.grandTotal,
+    'paymentMethod': i.paymentMethod,
+    'status': i.status,
+    'createdAt': i.createdAt.toIso8601String(),
   };
 
   void stopServer() {

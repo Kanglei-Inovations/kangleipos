@@ -22,6 +22,11 @@ class DashboardView extends GetView<DashboardController> {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final isDesktop = width >= 1280;
+          final isMobile = width < 768;
+
+          if (isMobile) {
+            return const _MobileLiteDashboard();
+          }
 
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -95,7 +100,7 @@ class _KpiGrid extends StatelessWidget {
         crossAxisCount: columns,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: width < 560 ? 140 : 180,
+        mainAxisExtent: width < 560 ? 165 : 180,
       ),
       itemBuilder: (context, index) {
         return _KpiCard(data: _kpis[index], index: index)
@@ -126,91 +131,95 @@ class _KpiCard extends StatelessWidget {
     return _HoverLift(
       child: GlassPanel(
         borderRadius: BorderRadius.circular(24),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         color: isDark
             ? const Color(0xFF1E293B).withValues(alpha: 0.62)
             : Colors.white.withValues(alpha: 0.76),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, cardConstraints) {
+            final showSparkline = cardConstraints.maxHeight >= 130;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: data.gradient),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: data.gradient.last.withValues(alpha: 0.30),
-                        blurRadius: 16,
-                        offset: const Offset(0, 10),
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: data.gradient),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: data.gradient.last.withValues(alpha: 0.30),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(data.icon, color: Colors.white, size: 21),
+                      child: Icon(data.icon, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        data.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: muted,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    data.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: muted,
-                      fontWeight: FontWeight.w800,
+                _AnimatedMetricValue(data: data),
+                Row(
+                  children: [
+                    Icon(
+                      data.growth >= 0
+                          ? Icons.arrow_upward_rounded
+                          : Icons.arrow_downward_rounded,
+                      size: 14,
+                      color: data.growth >= 0
+                          ? AppTheme.successColor
+                          : AppTheme.dangerColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${data.growth.abs().toStringAsFixed(1)}% vs yesterday',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: data.growth >= 0
+                            ? AppTheme.successColor
+                            : AppTheme.dangerColor,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                if (showSparkline)
+                  SizedBox(
+                    height: 24,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: Duration(milliseconds: 880 + (index * 70)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, _) {
+                        return CustomPaint(
+                          painter: _SparklinePainter(
+                            points: data.sparkline,
+                            colors: data.gradient,
+                            progress: value,
+                          ),
+                          size: Size.infinite,
+                        );
+                      },
                     ),
                   ),
-                ),
               ],
-            ),
-            const SizedBox(height: 12),
-            _AnimatedMetricValue(data: data),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  data.growth >= 0
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded,
-                  size: 14,
-                  color: data.growth >= 0
-                      ? AppTheme.successColor
-                      : AppTheme.dangerColor,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${data.growth.abs().toStringAsFixed(1)}% vs yesterday',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: data.growth >= 0
-                        ? AppTheme.successColor
-                        : AppTheme.dangerColor,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            SizedBox(
-              height: 34,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 880 + (index * 70)),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, _) {
-                  return CustomPaint(
-                    painter: _SparklinePainter(
-                      points: data.sparkline,
-                      colors: data.gradient,
-                      progress: value,
-                    ),
-                    size: Size.infinite,
-                  );
-                },
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -732,38 +741,57 @@ class _OperationsSection extends StatelessWidget {
   }
 }
 
-class _TopProductsTable extends StatelessWidget {
+class _TopProductsTable extends GetView<DashboardController> {
   const _TopProductsTable();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.brightness == Brightness.dark
-        ? AppTheme.darkMutedTextColor
-        : AppTheme.lightMutedTextColor;
+    final isDark = theme.brightness == Brightness.dark;
+    final muted =
+        isDark ? AppTheme.darkMutedTextColor : AppTheme.lightMutedTextColor;
 
-    return _PanelCard(
-      title: 'Top Selling Products',
-      actionLabel: 'View All',
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              children: [
-                SizedBox(width: 32, child: _TableHeaderText('#', muted: muted)),
-                const Expanded(flex: 5, child: _TableHeaderText('Product')),
-                const Expanded(flex: 2, child: _TableHeaderText('Sold')),
-                const Expanded(flex: 3, child: _TableHeaderText('Revenue')),
-              ],
-            ),
-          ),
-          const SizedBox(height: 2),
-          for (var index = 0; index < _products.length; index++)
-            _ProductRow(product: _products[index], rank: index + 1),
-        ],
-      ),
-    ).animate().fadeIn(duration: 560.ms).slideY(begin: 0.08, end: 0);
+    return Obx(() {
+      final topProducts = controller.topSellingProducts;
+
+      return _PanelCard(
+        title: 'Top Selling Products',
+        actionLabel: 'View All',
+        child: topProducts.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: Text('No product sales recorded yet.',
+                      style: TextStyle(
+                          color: isDark ? Colors.white30 : Colors.black38,
+                          fontSize: 13)),
+                ),
+              )
+            : Column(
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                            width: 32, child: _TableHeaderText('#', muted: muted)),
+                        const Expanded(
+                            flex: 5, child: _TableHeaderText('Product')),
+                        const Expanded(
+                            flex: 2, child: _TableHeaderText('Sold')),
+                        const Expanded(
+                            flex: 3, child: _TableHeaderText('Revenue')),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  for (var index = 0; index < topProducts.length; index++)
+                    _ProductRow(product: topProducts[index], rank: index + 1),
+                ],
+              ),
+      ).animate().fadeIn(duration: 560.ms).slideY(begin: 0.08, end: 0);
+    });
   }
 }
 
@@ -791,7 +819,7 @@ class _TableHeaderText extends StatelessWidget {
 }
 
 class _ProductRow extends StatelessWidget {
-  final _ProductData product;
+  final DashboardTopProduct product;
   final int rank;
 
   const _ProductRow({
@@ -839,10 +867,12 @@ class _ProductRow extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: product.gradient),
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF06B6D4)]),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(product.icon, size: 18, color: Colors.white),
+                    child: const Icon(Icons.shopping_bag_rounded,
+                        size: 18, color: Colors.white),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -861,7 +891,7 @@ class _ProductRow extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                '${product.sold}',
+                '${product.soldQuantity}',
                 style: theme.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -870,7 +900,7 @@ class _ProductRow extends StatelessWidget {
             Expanded(
               flex: 3,
               child: Text(
-                product.revenue,
+                '₹${product.totalRevenue.toStringAsFixed(0)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelLarge?.copyWith(
@@ -1272,25 +1302,42 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-class _RecentTransactionsCard extends StatelessWidget {
+class _RecentTransactionsCard extends GetView<DashboardController> {
   const _RecentTransactionsCard();
 
   @override
   Widget build(BuildContext context) {
-    return _PanelCard(
-      title: 'Recent Transactions',
-      child: Column(
-        children: [
-          for (final transaction in _transactions)
-            _TransactionTile(transaction: transaction),
-        ],
-      ),
-    ).animate().fadeIn(duration: 720.ms).slideX(begin: 0.05, end: 0);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Obx(() {
+      final txs = controller.unifiedTransactions;
+
+      return _PanelCard(
+        title: 'Recent Transactions',
+        child: txs.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: Text('No transactions recorded yet.',
+                      style: TextStyle(
+                          color: isDark ? Colors.white30 : Colors.black38,
+                          fontSize: 13)),
+                ),
+              )
+            : Column(
+                children: [
+                  for (final transaction in txs)
+                    _TransactionTile(transaction: transaction),
+                ],
+              ),
+      ).animate().fadeIn(duration: 720.ms).slideX(begin: 0.05, end: 0);
+    });
   }
 }
 
 class _TransactionTile extends StatelessWidget {
-  final _TransactionData transaction;
+  final DashboardTransaction transaction;
 
   const _TransactionTile({required this.transaction});
 
@@ -1298,6 +1345,23 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    final isSell = transaction.type == 'SELL';
+    final isPurchase = transaction.type == 'PURCHASE';
+
+    final badgeColor = isSell
+        ? AppTheme.successColor
+        : isPurchase
+            ? const Color(0xFF3B82F6)
+            : const Color(0xFFEF4444);
+
+    final badgeText = isSell
+        ? 'SELL'
+        : isPurchase
+            ? 'PURCHASE'
+            : 'CASHOUT';
+
+    final dateStr = DateFormat('dd MMM, hh:mm a').format(transaction.date);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1309,24 +1373,41 @@ class _TransactionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color:
-          isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
         ),
       ),
       child: Row(
         children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: badgeColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isSell
+                  ? Icons.arrow_downward_rounded
+                  : isPurchase
+                      ? Icons.shopping_bag_rounded
+                      : Icons.arrow_upward_rounded,
+              color: badgeColor,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.invoice,
+                  transaction.title,
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  transaction.customer,
+                  '${transaction.subtitle} • $dateStr',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -1334,35 +1415,39 @@ class _TransactionTile extends StatelessWidget {
                         ? AppTheme.darkMutedTextColor
                         : AppTheme.lightMutedTextColor,
                     fontWeight: FontWeight.w700,
+                    fontSize: 10,
                   ),
                 ),
               ],
             ),
           ),
-          Text(
-            transaction.time,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isDark
-                  ? AppTheme.darkMutedTextColor
-                  : AppTheme.lightMutedTextColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppTheme.successColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'Paid',
-              style: TextStyle(
-                color: AppTheme.successColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isSell ? '+' : '-'} ₹${transaction.amount.toStringAsFixed(0)}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: badgeColor,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -2093,3 +2178,192 @@ const _transactions = [
   _TransactionData('INV-10023', 'Amit Verma', '24 May, 11:10 AM'),
   _TransactionData('INV-10022', 'Neha Gupta', '24 May, 11:00 AM'),
 ];
+
+class _MobileLiteDashboard extends GetView<DashboardController> {
+  const _MobileLiteDashboard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Quick POS Hero Button
+          InkWell(
+            onTap: () => Get.toNamed('/pos'),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.point_of_sale_rounded, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('OPEN POS TERMINAL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                        SizedBox(height: 2),
+                        Text('Start billing & view recent sales', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 4 Lite KPI Cards (Today Sale, Expense, Purchase, Due)
+          Obx(() => GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.4,
+            children: [
+              _MobileKpiTile(
+                title: 'Today Sale',
+                value: '₹${controller.todaySales.value.toStringAsFixed(0)}',
+                icon: Icons.trending_up_rounded,
+                color: const Color(0xFF10B981),
+              ),
+              _MobileKpiTile(
+                title: 'Expense',
+                value: '₹${controller.todayExpenses.value.toStringAsFixed(0)}',
+                icon: Icons.receipt_long_rounded,
+                color: const Color(0xFFEF4444),
+              ),
+              _MobileKpiTile(
+                title: 'Purchase',
+                value: '₹${controller.todayPurchases.value.toStringAsFixed(0)}',
+                icon: Icons.shopping_bag_rounded,
+                color: const Color(0xFF3B82F6),
+              ),
+              _MobileKpiTile(
+                title: 'Due',
+                value: '₹${controller.totalDue.value.toStringAsFixed(0)}',
+                icon: Icons.account_balance_wallet_rounded,
+                color: const Color(0xFFF59E0B),
+              ),
+            ],
+          )),
+          const SizedBox(height: 20),
+
+          // Top Selling Products
+          const _TopProductsTable(),
+          const SizedBox(height: 20),
+
+          // Recent Transactions
+          const _RecentTransactionsCard(),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileKpiTile extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _MobileKpiTile({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 16),
+              ),
+            ],
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

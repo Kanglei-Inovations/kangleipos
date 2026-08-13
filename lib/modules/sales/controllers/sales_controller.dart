@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'package:get/get.dart';
-import 'package:drift/drift.dart' as drift;
 import '../../../database/database.dart';
 
 class SalesController extends GetxController {
@@ -29,10 +29,20 @@ class SalesController extends GetxController {
   final RxInt currentPage = 1.obs;
   final RxInt rowsPerPage = 10.obs;
 
+  Timer? _refreshTimer;
+
   @override
   void onInit() {
     super.onInit();
     refreshAllData();
+    // Auto-refresh every 15s to pick up synced data
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) => refreshAllData());
+  }
+
+  @override
+  void onClose() {
+    _refreshTimer?.cancel();
+    super.onClose();
   }
 
   Future<void> refreshAllData() async {
@@ -84,12 +94,14 @@ class SalesController extends GetxController {
   Future<void> calculateTopCustomers() async {
     final Map<String, double> custStats = {};
     for (var s in sales) {
-      final name = s.customerId ?? 'Walk-in';
-      custStats[name] = (custStats[name] ?? 0.0) + s.grandTotal;
+      // Resolve customer name from the loaded customers list
+      final custName = customers.firstWhereOrNull((c) => c.id == s.customerId)?.name ?? 'Walk-in';
+      custStats[custName] = (custStats[custName] ?? 0.0) + s.grandTotal;
     }
     final sortedEntries = custStats.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    topCustomers.assignAll(Map.fromEntries(sortedEntries.take(5)));
+    // Use Future.microtask to avoid setState-during-build
+    Future.microtask(() => topCustomers.assignAll(Map.fromEntries(sortedEntries.take(5))));
   }
 
   Future<void> calculateReturnStats() async {

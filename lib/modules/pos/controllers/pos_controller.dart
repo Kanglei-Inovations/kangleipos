@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:drift/drift.dart' as d;
@@ -5,6 +6,8 @@ import '../../../database/database.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import '../../../services/pdf_service.dart';
+import '../../../sync/sync_client.dart';
+import '../../customers/controllers/customer_controller.dart';
 import '../models/cart_item.dart';
 
 class PosController extends GetxController {
@@ -37,8 +40,17 @@ class PosController extends GetxController {
   final RxInt holdCount = 0.obs; 
   final RxInt draftCount = 0.obs;
 
+  // Split Payment: individual amounts for each method
+  final RxMap<String, double> splitAmounts = <String, double>{
+    'Cash': 0.0,
+    'UPI': 0.0,
+    'Due': 0.0,
+    'Payment Gateway': 0.0,
+  }.obs;
+
   // Persistent Hold Data
   final RxList<Invoice> heldInvoicesList = <Invoice>[].obs;
+  final RxList<Invoice> invoicesList = <Invoice>[].obs;
   final RxMap<String, List<InvoiceItem>> heldItemsMap = <String, List<InvoiceItem>>{}.obs;
   final Rx<Invoice?> selectedHeldInvoice = Rx<Invoice?>(null);
 
@@ -70,10 +82,12 @@ class PosController extends GetxController {
       final pList = await db.select(db.products).get();
       final cList = await db.select(db.categories).get();
       final custList = await db.select(db.customers).get();
+      final invList = await (db.select(db.invoices)..orderBy([(t) => d.OrderingTerm.desc(t.createdAt)])).get();
       
       products.assignAll(pList);
       categories.assignAll(cList);
       customers.assignAll(custList);
+      invoicesList.assignAll(invList);
 
       _updatePagination();
     } finally {
@@ -140,7 +154,80 @@ class PosController extends GetxController {
   void clearCart() {
     cart.clear();
     selectedCustomer.value = null;
+    receivedAmount.value = 0.0;
+    splitAmounts.updateAll((key, value) => 0.0);
+    selectedPaymentMethod.value = 'Cash';
   }
+
+  // Add Customer from POS
+  Future<Customer> addNewCustomer({
+    required String name,
+    String? phone,
+    String? address,
+  }) async {
+    final id = _uuid.v4();
+    final now = DateTime.now();
+    final newCust = Customer(
+      id: id,
+      name: name,
+      phone: phone,
+      address: address,
+      balanceDue: 0.0,
+      creditLimit: 0.0,
+      loyaltyPoints: 0.0,
+      createdAt: now,
+    );
+
+    await db.into(db.customers).insert(CustomersCompanion(
+      id: d.Value(id),
+      name: d.Value(name),
+      phone: d.Value(phone),
+      address: d.Value(address),
+      balanceDue: const d.Value(0.0),
+    ));
+
+    // Refresh customers list in POS
+    final custList = await db.select(db.customers).get();
+    customers.assignAll(custList);
+
+    // Refresh CustomerController if registered
+    try {
+      if (Get.isRegistered<CustomerController>()) {
+        Get.find<CustomerController>().refreshData();
+      }
+    } catch (_) {}
+
+    selectedCustomer.value = newCust;
+
+    // Push the new customer to desktop PC immediately
+    _pushCustomerToDesktop(newCust);
+
+    return newCust;
+  }
+
+  void _pushCustomerToDesktop(Customer cust) async {
+    try {
+      if (!Get.isRegistered<SyncClientService>()) return;
+      final client = Get.find<SyncClientService>();
+      if (!client.isConnected.value) return;
+
+      await client.pushToDesktop([], [], customers: [
+        {
+          'id': cust.id,
+          'name': cust.name,
+          'phone': cust.phone,
+          'email': cust.email,
+          'address': cust.address,
+          'gstNumber': cust.gstNumber,
+          'balanceDue': cust.balanceDue,
+          'creditLimit': cust.creditLimit,
+          'loyaltyPoints': cust.loyaltyPoints,
+          'createdAt': cust.createdAt.toIso8601String(),
+        }
+      ]);
+    } catch (_) {}
+  }
+
 
   // CALCULATIONS
   double get subtotal => cart.fold(0, (sum, item) => sum + item.subtotal);
@@ -151,21 +238,61 @@ class PosController extends GetxController {
   Future<void> processCheckout(String paymentMethod) async {
     if (cart.isEmpty) return;
 
+    final total = grandTotal;
+
+    // For Split: sum all split input amounts as the received amount
+    double rec;
+    if (paymentMethod == 'Split') {
+      rec = splitAmounts.values.fold(0.0, (a, b) => a + b);
+      // Due portion in split is the split Due field
+    } else if (paymentMethod == 'Due') {
+      // Selecting Due = customer takes full credit
+      rec = 0.0;
+    } else {
+      rec = receivedAmount.value;
+    }
+
+    final dueAmount = math.max(0.0, total - rec);
+
+    String status;
+    if (paymentMethod == 'Due') {
+      status = 'UNPAID';
+    } else if (rec <= 0) {
+      status = 'UNPAID';
+    } else if (rec < total) {
+      status = 'PARTIAL';
+    } else {
+      status = 'PAID';
+    }
+
+    // Validation: require customer for any due amount
+    if (dueAmount > 0 && selectedCustomer.value == null) {
+      Get.snackbar(
+        'Customer Required for Due Sale',
+        'Amount ₹${dueAmount.toStringAsFixed(2)} is remaining as DUE. Please select or add a customer to record due/credit sales.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
     isLoading.value = true;
     try {
       final invoiceId = _uuid.v4();
       final invoiceNumber = 'INV-${DateFormat('yyyyMMdd-HHmmss').format(DateTime.now())}';
 
-      // 1. Create Invoice Entry
+      // 1. Create Invoice Entry with real status & payment method
       await db.into(db.invoices).insert(InvoicesCompanion(
         id: d.Value(invoiceId),
         invoiceNumber: d.Value(invoiceNumber),
         customerId: d.Value(selectedCustomer.value?.id),
         subtotal: d.Value(subtotal),
         taxTotal: d.Value(totalGst),
-        grandTotal: d.Value(grandTotal),
+        grandTotal: d.Value(total),
         paymentMethod: d.Value(paymentMethod),
-        status: d.Value('PAID'),
+        status: d.Value(status),
+        createdAt: d.Value(DateTime.now()),
       ));
 
       // 2. Create Invoice Items & Update Stock
@@ -189,9 +316,24 @@ class PosController extends GetxController {
             .write(ProductsCompanion(stockQuantity: d.Value(updatedStock)));
       }
 
-      Get.snackbar('Success', 'Invoice $invoiceNumber generated successfully!',
-          backgroundColor: Get.theme.primaryColor, colorText: Colors.white);
-      
+      // 3. Update Customer Balance Due if dueAmount > 0
+      if (dueAmount > 0 && selectedCustomer.value != null) {
+        final cust = selectedCustomer.value!;
+        final newDue = cust.balanceDue + dueAmount;
+        await (db.update(db.customers)..where((t) => t.id.equals(cust.id)))
+            .write(CustomersCompanion(balanceDue: d.Value(newDue)));
+      }
+
+      final statusMsg = status == 'PAID'
+          ? 'Paid in Full'
+          : status == 'PARTIAL'
+              ? 'Partial Paid (Due: ₹${dueAmount.toStringAsFixed(2)})'
+              : 'DUE Sale (Due: ₹${dueAmount.toStringAsFixed(2)})';
+
+      Get.snackbar('Success', 'Invoice $invoiceNumber ($statusMsg) generated successfully!',
+          backgroundColor: status == 'PAID' ? Colors.green : Colors.orange,
+          colorText: Colors.white);
+
       // Open PDF Preview
       await PdfService.generateAndPrintInvoice(
         invoiceNumber: invoiceNumber,
@@ -199,16 +341,62 @@ class PosController extends GetxController {
         items: List.from(cart),
         subtotal: subtotal,
         taxTotal: totalGst,
-        grandTotal: grandTotal,
+        grandTotal: total,
       );
-      
+
+      // Auto-Sync sale to Desktop Server in background if connected
+      _autoPushSaleToDesktop(invoiceId, invoiceNumber, subtotal, totalGst, total, paymentMethod, status);
+
       clearCart();
-      await refreshData(); // Refresh product list for stock updates
+      await refreshData(); // Refresh product list & customer list for stock/due updates
     } catch (e) {
       Get.snackbar('Error', 'Checkout failed: $e', backgroundColor: Colors.red, colorText: Colors.white);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void _autoPushSaleToDesktop(String invoiceId, String invoiceNumber, double sub, double tax, double total, String method, String status) async {
+    try {
+      if (!Get.isRegistered<SyncClientService>()) return;
+      final client = Get.find<SyncClientService>();
+      if (!client.isConnected.value) return;
+
+      final saleData = {
+        'id': invoiceId,
+        'invoiceNumber': invoiceNumber,
+        'customerId': selectedCustomer.value?.id,
+        'subtotal': sub,
+        'taxTotal': tax,
+        'grandTotal': total,
+        'paymentMethod': method,
+        'status': status,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      // Also push the customer if one is linked, so PC gets new customers immediately
+      final List<Map<String, dynamic>> customerPayload = [];
+      final cust = selectedCustomer.value;
+      if (cust != null) {
+        customerPayload.add({
+          'id': cust.id,
+          'name': cust.name,
+          'phone': cust.phone,
+          'email': cust.email,
+          'address': cust.address,
+          'gstNumber': cust.gstNumber,
+          'balanceDue': cust.balanceDue,
+          'creditLimit': cust.creditLimit,
+          'loyaltyPoints': cust.loyaltyPoints,
+          'createdAt': cust.createdAt.toIso8601String(),
+        });
+      }
+
+      final success = await client.pushToDesktop([saleData], [], customers: customerPayload);
+      if (success) {
+        client.syncFromDesktop();
+      }
+    } catch (_) {}
   }
 
   // --- HOLD INVOICE LOGIC ---

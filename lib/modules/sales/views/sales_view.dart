@@ -32,7 +32,6 @@ class SalesView extends GetView<SalesController> {
         ),
       ),
       child: Obx(() {
-        controller.refreshAllData();
         if (controller.isLoading.value && controller.sales.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -312,7 +311,14 @@ class _RecentInvoicesTable extends GetView<SalesController> {
                         rows: sales.map((inv) {
                           return DataRow(cells: [
                             DataCell(Text(inv.invoiceNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                            DataCell(Text(inv.customerId ?? 'Walk-in', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                            DataCell(Builder(builder: (ctx) {
+                              final custName = controller.customers
+                                  .firstWhereOrNull((c) => c.id == inv.customerId)?.name;
+                              return Text(
+                                custName ?? (inv.customerId != null ? 'Customer' : 'Walk-in'),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              );
+                            })),
                             DataCell(Text(DateFormat('MMM dd, HH:mm').format(inv.createdAt), style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color))),
                             DataCell(Text('₹ ${inv.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
                             DataCell(_buildBadge(inv.paymentMethod, _getPaymentColor(inv.paymentMethod))),

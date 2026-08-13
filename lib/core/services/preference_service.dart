@@ -58,6 +58,20 @@ class PreferenceService {
   double get windowHeight => _prefs.getDouble(_keyWindowHeight) ?? 1080.0;
   Future<void> setWindowHeight(double value) => _prefs.setDouble(_keyWindowHeight, value);
 
+  static const String _keySyncServerIp = 'sync_server_ip';
+  static const String _keySyncServerPort = 'sync_server_port';
+  static const String _keySyncServerToken = 'sync_server_token';
+
+  String? get syncServerIp => _prefs.getString(_keySyncServerIp);
+  int get syncServerPort => _prefs.getInt(_keySyncServerPort) ?? 8765;
+  String? get syncServerToken => _prefs.getString(_keySyncServerToken);
+
+  Future<void> saveSyncConfig(String ip, int port, String token) async {
+    await _prefs.setString(_keySyncServerIp, ip);
+    await _prefs.setInt(_keySyncServerPort, port);
+    await _prefs.setString(_keySyncServerToken, token);
+  }
+
   // Helper to fix the typo I made in my head just now
   static const String _keyAuthAuthUserName = 'auth_user_name';
 }

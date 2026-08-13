@@ -42,19 +42,21 @@ class _MainLayoutState extends State<MainLayout> {
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: isTablet ? const Sidebar(isMobile: true) : null,
       bottomNavigationBar: isMobile ? const _MobileNavigation() : null,
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isDesktop)
-            Sidebar(
-              isMobile: false,
-              isCollapsed: _sidebarCollapsed,
-              onToggle: () {
-                setState(() => _sidebarCollapsed = !_sidebarCollapsed);
-              },
-            ),
-          Expanded(
-            child: Container(
+      body: SafeArea(
+        bottom: false,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (isDesktop)
+              Sidebar(
+                isMobile: false,
+                isCollapsed: _sidebarCollapsed,
+                onToggle: () {
+                  setState(() => _sidebarCollapsed = !_sidebarCollapsed);
+                },
+              ),
+            Expanded(
+              child: Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF0F172A) : Colors.white,
@@ -111,7 +113,8 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -188,15 +191,20 @@ class _PremiumHeader extends StatelessWidget {
 
   Widget _buildMobileHeader(BuildContext context) {
     final themeController = context.watch<AppThemeController>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.bolt_rounded, color: AppTheme.primaryColor, size: 20),
+          child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -208,11 +216,28 @@ class _PremiumHeader extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
               ),
-              const Text(
-                'Kanglei POS Lite',
-                style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Kanglei POS • Live',
+                    style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w700),
+                  ),
+                ],
               ),
             ],
           ),
@@ -223,8 +248,8 @@ class _PremiumHeader extends StatelessWidget {
         ],
         _HeaderIconButton(
           icon: themeController.isDarkMode
-              ? Icons.light_mode_outlined
-              : Icons.dark_mode_outlined,
+              ? Icons.light_mode_rounded
+              : Icons.dark_mode_rounded,
           onTap: themeController.toggleTheme,
         ),
       ],
@@ -641,26 +666,29 @@ class _MobileNavigation extends StatelessWidget {
       (Icons.sync_rounded, 'Sync', AppRoutes.SYNC),
     ];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-      child: GlassPanel(
-        height: 72,
-        borderRadius: BorderRadius.circular(26),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            for (final item in destinations)
-              _MobileNavItem(
-                icon: item.$1,
-                label: item.$2,
-                selected: currentRoute == item.$3,
-                onTap: () {
-                  if (currentRoute == item.$3) return;
-                  Get.offNamed(item.$3);
-                },
-              ),
-          ],
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+        child: GlassPanel(
+          height: 64,
+          borderRadius: BorderRadius.circular(22),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (final item in destinations)
+                _MobileNavItem(
+                  icon: item.$1,
+                  label: item.$2,
+                  selected: currentRoute == item.$3,
+                  onTap: () {
+                    if (currentRoute == item.$3) return;
+                    Get.offNamed(item.$3);
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -684,36 +712,42 @@ class _MobileNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 9),
+          padding: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
             color: selected
                 ? AppTheme.primaryColor.withOpacity(0.14)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: selected ? AppTheme.primaryColor : null,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: selected ? AppTheme.primaryColor : null,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: selected ? AppTheme.primaryColor : null,
+                        ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: selected ? AppTheme.primaryColor : null,
-                    ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

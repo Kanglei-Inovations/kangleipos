@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as d;
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import '../core/services/preference_service.dart';
 import '../database/database.dart';
 
 class SyncClientService extends GetxService {
@@ -19,11 +20,33 @@ class SyncClientService extends GetxService {
   final RxDouble syncProgress = 0.0.obs;
   final RxString lastSyncTime = 'Never'.obs;
 
+  Future<SyncClientService> init() async {
+    try {
+      final pref = Get.find<PreferenceService>();
+      final savedIp = pref.syncServerIp;
+      final savedPort = pref.syncServerPort;
+      final savedToken = pref.syncServerToken;
+
+      if (savedIp != null && savedIp.isNotEmpty) {
+        _serverIp = savedIp;
+        _serverPort = savedPort;
+        _token = savedToken;
+        isConnected.value = true;
+        _logger.i('Restored sync connection config to $_serverIp:$_serverPort');
+      }
+    } catch (_) {}
+    return this;
+  }
+
   void configure(String ip, int port, String token) {
     _serverIp = ip;
     _serverPort = port;
     _token = token;
     isConnected.value = true;
+    try {
+      final pref = Get.find<PreferenceService>();
+      pref.saveSyncConfig(ip, port, token);
+    } catch (_) {}
   }
 
   String get baseUrl => 'http://$_serverIp:$_serverPort';
@@ -140,12 +163,41 @@ class SyncClientService extends GetxService {
         CustomersCompanion(
           id: d.Value(c['id']),
           name: d.Value(c['name']),
-          phone: d.Value(c['phone'] ?? ''),
+          phone: d.Value(c['phone']),
           email: d.Value(c['email']),
           address: d.Value(c['address']),
+          gstNumber: d.Value(c['gstNumber']),
+          balanceDue: d.Value((c['balanceDue'] as num?)?.toDouble() ?? 0.0),
+          creditLimit: d.Value((c['creditLimit'] as num?)?.toDouble() ?? 0.0),
           loyaltyPoints: d.Value((c['loyaltyPoints'] as num?)?.toDouble() ?? 0.0),
+          createdAt: c['createdAt'] != null
+              ? d.Value(DateTime.parse(c['createdAt']))
+              : const d.Value.absent(),
         ),
       );
+    }
+
+    // Sales (Invoices) from PC → import to mobile
+    final salesList = (data['sales'] as List?) ?? [];
+    syncProgress.value = 0.80;
+    for (final s in salesList) {
+      try {
+        await _db.into(_db.invoices).insertOnConflictUpdate(
+          InvoicesCompanion(
+            id: d.Value(s['id']),
+            invoiceNumber: d.Value(s['invoiceNumber']),
+            customerId: d.Value(s['customerId']),
+            subtotal: d.Value((s['subtotal'] as num?)?.toDouble() ?? (s['grandTotal'] as num).toDouble()),
+            taxTotal: d.Value((s['taxTotal'] as num?)?.toDouble() ?? 0.0),
+            grandTotal: d.Value((s['grandTotal'] as num).toDouble()),
+            paymentMethod: d.Value(s['paymentMethod'] ?? 'CASH'),
+            status: d.Value(s['status'] ?? 'PAID'),
+            createdAt: s['createdAt'] != null
+                ? d.Value(DateTime.parse(s['createdAt']))
+                : const d.Value.absent(),
+          ),
+        );
+      } catch (_) {}
     }
 
     // Purchases
@@ -166,14 +218,22 @@ class SyncClientService extends GetxService {
     syncProgress.value = 1.0;
   }
 
-  /// Push mobile-created sales/purchases back to desktop
-  Future<bool> pushToDesktop(List<Map<String, dynamic>> sales, List<Map<String, dynamic>> purchases) async {
+  /// Push mobile-created sales/purchases/customers back to desktop
+  Future<bool> pushToDesktop(
+    List<Map<String, dynamic>> sales,
+    List<Map<String, dynamic>> purchases, {
+    List<Map<String, dynamic>> customers = const [],
+  }) async {
     if (_serverIp == null) return false;
     try {
       final resp = await http.post(
         Uri.parse('$baseUrl/sync/push'),
         headers: _headers,
-        body: jsonEncode({'sales': sales, 'purchases': purchases}),
+        body: jsonEncode({
+          'sales': sales,
+          'purchases': purchases,
+          'customers': customers,
+        }),
       ).timeout(const Duration(seconds: 15));
       return resp.statusCode == 200;
     } catch (e) {

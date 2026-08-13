@@ -41,7 +41,7 @@ class _PosProductCardState extends State<PosProductCard> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _isHovered ? theme.colorScheme.primary : theme.dividerColor),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -53,13 +53,13 @@ class _PosProductCardState extends State<PosProductCard> {
                           child: Image.network(
                             widget.product.imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(Icons.image, size: 50, color: theme.dividerColor),
+                            errorBuilder: (_, __, ___) => Icon(Icons.image, size: 36, color: theme.dividerColor),
                           ),
                         )
-                      : Icon(Icons.image, size: 50, color: theme.dividerColor),
+                      : Icon(Icons.image, size: 36, color: theme.dividerColor),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 widget.product.name,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -72,30 +72,35 @@ class _PosProductCardState extends State<PosProductCard> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 "₹ ${NumberFormat('#,##,###.00').format(widget.product.price)}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(radius: 4, backgroundColor: isOutOfStock ? Colors.red : Colors.green),
-                      const SizedBox(width: 4),
-                      Text(
-                        isOutOfStock ? "Out of Stock" : "In Stock",
-                        style: TextStyle(fontSize: 11, color: isOutOfStock ? Colors.red : Colors.green),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    "${widget.product.stockQuantity.toInt()}",
-                    style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(radius: 3.5, backgroundColor: isOutOfStock ? Colors.red : Colors.green),
+                        const SizedBox(width: 4),
+                        Text(
+                          isOutOfStock ? "Out of Stock" : "In Stock",
+                          style: TextStyle(fontSize: 11, color: isOutOfStock ? Colors.red : Colors.green, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Qty: ${widget.product.stockQuantity.toInt()}",
+                      style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               )
             ],
           ),
@@ -180,18 +185,21 @@ class CartItemTile extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Row(
-              children: [
-                _qtyBtn(context, Icons.remove, () => onUpdateQuantity(-1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    "${item.quantity}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                children: [
+                  _qtyBtn(context, Icons.remove, () => onUpdateQuantity(-1)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: Text(
+                      "${item.quantity}",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
                   ),
-                ),
-                _qtyBtn(context, Icons.add, () => onUpdateQuantity(1)),
-              ],
+                  _qtyBtn(context, Icons.add, () => onUpdateQuantity(1)),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -462,8 +470,8 @@ class PosInvoiceTab extends StatelessWidget {
   }
 }
 
-// --- CHECKOUT AREA (MATCHING REFERENCE) ---
-class CheckoutAction extends StatelessWidget {
+// --- CHECKOUT AREA ---
+class CheckoutAction extends StatefulWidget {
   final double amount;
   final VoidCallback onTap;
   final bool isLoading;
@@ -478,85 +486,391 @@ class CheckoutAction extends StatelessWidget {
   });
 
   @override
+  State<CheckoutAction> createState() => _CheckoutActionState();
+}
+
+class _CheckoutActionState extends State<CheckoutAction> {
+  late TextEditingController _receivedCtrl;
+
+  // Split field controllers
+  final Map<String, TextEditingController> _splitCtrls = {
+    'Cash': TextEditingController(),
+    'UPI': TextEditingController(),
+    'Due': TextEditingController(),
+    'Payment Gateway': TextEditingController(),
+  };
+
+  static const _methods = ['Cash', 'Due', 'UPI', 'Payment Gateway', 'Split'];
+  static const _splitMethods = ['Cash', 'UPI', 'Due', 'Payment Gateway'];
+
+  static const Map<String, IconData> _methodIcons = {
+    'Cash': Icons.payments_outlined,
+    'Due': Icons.account_balance_wallet_outlined,
+    'UPI': Icons.phone_android_outlined,
+    'Payment Gateway': Icons.credit_card_outlined,
+    'Split': Icons.call_split_rounded,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _receivedCtrl = TextEditingController(
+      text: widget.receivedAmount == 0 ? '' : widget.receivedAmount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant CheckoutAction oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.receivedAmount != widget.receivedAmount) {
+      final txt = widget.receivedAmount == 0 ? '' : widget.receivedAmount.toStringAsFixed(0);
+      if (_receivedCtrl.text != txt) _receivedCtrl.text = txt;
+    }
+  }
+
+  @override
+  void dispose() {
+    _receivedCtrl.dispose();
+    for (final c in _splitCtrls.values) c.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
+    final pos = Get.find<PosController>();
+    final total = widget.amount;
+
+    return Obx(() {
+      final method = pos.selectedPaymentMethod.value;
+      final isDue = method == 'Due';
+      final isSplit = method == 'Split';
+
+      // Compute effective received for status display
+      double received;
+      if (isDue) {
+        received = 0.0;
+      } else if (isSplit) {
+        received = pos.splitAmounts.values.fold(0.0, (a, b) => a + b);
+      } else {
+        received = pos.receivedAmount.value;
+      }
+
+      final due = math.max(0.0, total - received);
+      final change = math.max(0.0, received - total);
+
+      Color statusColor;
+      String statusLabel;
+      String statusValue;
+
+      if (isDue) {
+        statusColor = Colors.red;
+        statusLabel = 'Full Amount DUE';
+        statusValue = '₹ ${NumberFormat('#,##,###.00').format(total)}';
+      } else if (received >= total && total > 0) {
+        statusColor = Colors.green;
+        statusLabel = 'Change to Return';
+        statusValue = '₹ ${NumberFormat('#,##,###.00').format(change)}';
+      } else if (received > 0 && received < total) {
+        statusColor = Colors.orange;
+        statusLabel = 'Remaining DUE';
+        statusValue = '₹ ${NumberFormat('#,##,###.00').format(due)}';
+      } else {
+        statusColor = Colors.red;
+        statusLabel = isSplit ? 'Split Not Filled' : 'Full Amount DUE';
+        statusValue = '₹ ${NumberFormat('#,##,###.00').format(total)}';
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Payment Method Selector ──
+          Text('Payment Method', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textTheme.bodySmall?.color)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _methods.map((m) {
+              final sel = method == m;
+              return GestureDetector(
+                onTap: () => pos.selectedPaymentMethod.value = m,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: sel ? theme.colorScheme.primary : theme.cardColor,
+                    border: Border.all(
+                      color: sel ? theme.colorScheme.primary : theme.dividerColor,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(_methodIcons[m], size: 15,
+                          color: sel ? Colors.white : theme.textTheme.bodySmall?.color),
+                      const SizedBox(width: 5),
+                      Text(m, style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.white : theme.textTheme.bodyMedium?.color,
+                      )),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+
+          // ── Input Section ──
+          if (!isDue && !isSplit) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Received Amount',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                                  color: theme.textTheme.bodySmall?.color)),
+                          GestureDetector(
+                            onTap: () {
+                              pos.receivedAmount.value = total;
+                              _receivedCtrl.text = total.toStringAsFixed(0);
+                            },
+                            child: Text(
+                              'Exact Pay (₹${total.toStringAsFixed(0)})',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: _receivedCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (v) => pos.receivedAmount.value = double.tryParse(v) ?? 0.0,
+                        decoration: InputDecoration(
+                          hintText: '0.00',
+                          prefixText: '₹ ',
+                          fillColor: theme.cardColor,
+                          filled: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: _StatusBox(label: statusLabel, value: statusValue, color: statusColor),
+                ),
+              ],
+            ),
+          ] else if (isDue) ...[
+            _StatusBox(label: statusLabel, value: statusValue, color: statusColor),
+            const SizedBox(height: 4),
+            Text(
+              'Customer will be credited for full amount. Select a customer to record this due.',
+              style: TextStyle(fontSize: 11, color: Colors.red.shade400),
+            ),
+          ] else if (isSplit) ...[
+            // Split panel
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Received Amount", style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color?.withOpacity(0.6))),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: TextEditingController(text: receivedAmount.toStringAsFixed(0)),
-                    onChanged: (v) {
-                      final pos = Get.find<PosController>();
-                      pos.receivedAmount.value = double.tryParse(v) ?? 0;
-                    },
-                    decoration: InputDecoration(
-                      prefixText: "₹ ",
-                      fillColor: theme.cardColor,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
+                  Text('Split Amount Entry',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
+                  const SizedBox(height: 10),
+                  ..._splitMethods.map((sm) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            child: Row(
+                              children: [
+                                Icon(_methodIcons[sm], size: 14,
+                                    color: theme.textTheme.bodySmall?.color),
+                                const SizedBox(width: 6),
+                                Text(sm,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: _splitCtrls[sm],
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (v) {
+                                pos.splitAmounts[sm] = double.tryParse(v) ?? 0.0;
+                              },
+                              decoration: InputDecoration(
+                                hintText: '0',
+                                prefixText: '₹ ',
+                                isDense: true,
+                                filled: true,
+                                fillColor: theme.cardColor,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const Divider(height: 16),
+                  Obx(() {
+                    final splitTotal = pos.splitAmounts.values.fold(0.0, (a, b) => a + b);
+                    final remaining = total - splitTotal;
+                    final overPaid = splitTotal > total;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Split Total: ₹${splitTotal.toStringAsFixed(2)}',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: overPaid ? Colors.red : theme.textTheme.bodyMedium?.color)),
+                        Text(
+                          overPaid
+                              ? 'Over by ₹${(splitTotal - total).toStringAsFixed(2)}'
+                              : remaining > 0
+                                  ? 'Remaining: ₹${remaining.toStringAsFixed(2)}'
+                                  : '✓ Fully covered',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: overPaid
+                                  ? Colors.red
+                                  : remaining > 0
+                                      ? Colors.orange
+                                      : Colors.green),
+                        ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 1,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text("Change to Return", style: TextStyle(fontSize: 12, color: Colors.green)),
-                    const SizedBox(height: 4),
-                    Text(
-                      "₹ ${NumberFormat('#,##,###.00').format(math.max(0.0, receivedAmount - amount))}",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                  ],
-                ),
-              ),
-            )
           ],
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: isLoading ? null : onTap,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+
+          const SizedBox(height: 14),
+
+          // ── Checkout Button ──
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: widget.isLoading ? null : widget.onTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDue
+                    ? Colors.red.shade600
+                    : received >= total && total > 0
+                        ? Colors.green
+                        : received > 0
+                            ? Colors.orange
+                            : isSplit
+                                ? theme.colorScheme.primary
+                                : AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: widget.isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isDue
+                              ? Icons.account_balance_wallet_outlined
+                              : received >= total && total > 0
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.access_time_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            isDue
+                                ? 'Record as DUE (₹${total.toStringAsFixed(0)})'
+                                : isSplit
+                                    ? 'Complete Split Sale'
+                                    : received >= total && total > 0
+                                        ? 'Complete Paid Sale'
+                                        : received > 0
+                                            ? 'Partial Sale (Due ₹${due.toStringAsFixed(0)})'
+                                            : 'Submit as DUE (₹${total.toStringAsFixed(0)})',
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
-            child: isLoading 
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Pay / Checkout (F8)", style: TextStyle(fontSize: 18, color: Colors.white)),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, color: Colors.white),
-                  ],
-                ),
           ),
-        )
-      ],
+        ],
+      );
+    });
+  }
+}
+
+// ── Status display box ──
+class _StatusBox extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatusBox({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+          ),
+        ],
+      ),
     );
   }
 }
+
 
 // --- QUICK SHORTCUT ITEM (MATCHING REFERENCE) ---
 class QuickShortcutItem extends StatelessWidget {

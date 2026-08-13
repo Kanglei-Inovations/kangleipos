@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -130,7 +131,8 @@ class PosView extends GetView<PosController> {
   Widget _buildMobileLayout(BuildContext context) {
     final theme = Theme.of(context);
     return DefaultTabController(
-      length: 2,
+      length: 3,
+      initialIndex: 0,
       child: Column(
         children: [
           Container(
@@ -143,10 +145,11 @@ class PosView extends GetView<PosController> {
                 indicatorColor: theme.colorScheme.primary,
                 indicatorWeight: 3,
                 tabs: [
+                  const Tab(text: 'SALES', icon: Icon(Icons.history_rounded, size: 20)),
                   const Tab(text: 'PRODUCTS', icon: Icon(Icons.grid_view_rounded, size: 20)),
                   Tab(
                     text: cartCount > 0 ? 'BILLING ($cartCount)' : 'BILLING',
-                    icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                    icon: const Icon(Icons.point_of_sale_rounded, size: 20),
                   ),
                 ],
               );
@@ -155,25 +158,124 @@ class PosView extends GetView<PosController> {
           Expanded(
             child: TabBarView(
               children: [
+                _buildRecentSalesMobile(context),
                 Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   child: Column(
                     children: [
                       _buildSearchBar(),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       _buildCategoryChips(),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Expanded(child: _buildProductGrid(false)),
                     ],
                   ),
                 ),
-                _buildRightPanel(context),
+                _buildMobileBillingPanel(context),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildRecentSalesMobile(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Obx(() {
+      final invoices = controller.invoicesList;
+      if (invoices.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.history_rounded, size: 48, color: theme.dividerColor),
+              const SizedBox(height: 12),
+              Text('No recent sales found', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+            ],
+          ),
+        );
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.all(12),
+        itemCount: invoices.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final inv = invoices[index];
+          final customer = controller.customers.firstWhereOrNull((c) => c.id == inv.customerId);
+
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primaryColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        inv.invoiceNumber,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${customer?.name ?? "Walk-in Customer"} • ${DateFormat('MMM dd, hh:mm a').format(inv.createdAt)}',
+                        style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₹${inv.grandTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF10B981)),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        inv.paymentMethod,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   // --- LEFT PANEL COMPONENTS ---
@@ -281,10 +383,10 @@ class PosView extends GetView<PosController> {
       }
       return GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: isTablet ? 3 : 4,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+          crossAxisCount: isTablet ? 3 : 2,
+          childAspectRatio: isTablet ? 0.75 : 0.82,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
         ),
         itemCount: products.length,
         itemBuilder: (context, index) => PosProductCard(
@@ -787,8 +889,6 @@ class PosView extends GetView<PosController> {
           const Divider(height: 32),
           _buildTotals(),
           const SizedBox(height: 24),
-          _buildPaymentMethods(),
-          const SizedBox(height: 16),
           Obx(() => CheckoutAction(
             amount: controller.grandTotal,
             receivedAmount: controller.receivedAmount.value,
@@ -827,9 +927,283 @@ class PosView extends GetView<PosController> {
   Widget _buildCustomerSelector() {
     return Obx(() => CustomerSelector(
       selectedCustomer: controller.selectedCustomer.value,
-      onAddCustomer: () {},
-      onTap: () {},
+      onAddCustomer: () => _showAddCustomerDialog(Get.context!),
+      onTap: () => _showSelectCustomerDialog(Get.context!),
     ));
+  }
+
+  void _showSelectCustomerDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final searchController = TextEditingController();
+    final rxSearch = ''.obs;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Select Customer",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Search Bar
+            TextField(
+              controller: searchController,
+              onChanged: (v) => rxSearch.value = v.toLowerCase(),
+              decoration: InputDecoration(
+                hintText: "Search customer by name or phone...",
+                prefixIcon: const Icon(Icons.search_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Customer List
+            Expanded(
+              child: Obx(() {
+                final query = rxSearch.value;
+                final allCustomers = controller.customers;
+                final filtered = allCustomers.where((c) {
+                  return c.name.toLowerCase().contains(query) ||
+                      (c.phone != null && c.phone!.contains(query));
+                }).toList();
+
+                return ListView(
+                  children: [
+                    // Walk-in Customer Option
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.blue.withValues(alpha: 0.15),
+                        child: const Icon(Icons.person_outline, color: Colors.blue),
+                      ),
+                      title: const Text("Walk-in Customer", style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text("Default / Cash Customer"),
+                      trailing: controller.selectedCustomer.value == null
+                          ? const Icon(Icons.check_circle, color: Colors.blue)
+                          : null,
+                      onTap: () {
+                        controller.selectedCustomer.value = null;
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                    const Divider(),
+
+                    if (filtered.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Center(
+                          child: Text("No customers found.", style: TextStyle(color: Colors.grey)),
+                        ),
+                      )
+                    else
+                      for (final cust in filtered)
+                        ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                            child: Text(
+                              cust.name.isNotEmpty ? cust.name[0].toUpperCase() : 'C',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                            ),
+                          ),
+                          title: Text(cust.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(cust.phone != null && cust.phone!.isNotEmpty ? cust.phone! : "No phone number"),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (cust.balanceDue > 0)
+                                Text(
+                                  "Due: ₹${cust.balanceDue.toStringAsFixed(0)}",
+                                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                                )
+                              else
+                                const Text("No Due", style: TextStyle(color: Colors.green, fontSize: 11)),
+                              if (controller.selectedCustomer.value?.id == cust.id)
+                                const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                            ],
+                          ),
+                          onTap: () {
+                            controller.selectedCustomer.value = cust;
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                  ],
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+
+            // Bottom Create New Customer Button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showAddCustomerDialog(context);
+                },
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text("Create New Customer", style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddCustomerDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final addressController = TextEditingController();
+
+    Future<void> pickFromContacts() async {
+      try {
+        if (await FlutterContacts.requestPermission()) {
+          final contact = await FlutterContacts.openExternalPick();
+          if (contact != null) {
+            nameController.text = contact.displayName;
+            if (contact.phones.isNotEmpty) {
+              phoneController.text = contact.phones.first.number;
+            }
+          }
+        } else {
+          Get.snackbar("Permission Denied", "Contact permission is required to select from phone contacts.",
+              backgroundColor: Colors.orange, colorText: Colors.white);
+        }
+      } catch (e) {
+        Get.snackbar("Contacts Unavailable", "Could not access phone contacts: $e",
+            backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.person_add_rounded, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 12),
+            const Text("Add New Customer", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Contact Picker Button
+              OutlinedButton.icon(
+                onPressed: pickFromContacts,
+                icon: const Icon(Icons.contacts_rounded, color: Colors.blue),
+                label: const Text("Import from Phone Contacts", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                  side: const BorderSide(color: Colors.blue),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: "Customer Name *",
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: "Phone Number",
+                  prefixIcon: const Icon(Icons.phone),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: addressController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: "Address (Optional)",
+                  prefixIcon: const Icon(Icons.location_on),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isEmpty) {
+                Get.snackbar("Required Field", "Please enter customer name",
+                    backgroundColor: Colors.orange, colorText: Colors.white);
+                return;
+              }
+
+              final newCust = await controller.addNewCustomer(
+                name: name,
+                phone: phoneController.text.trim(),
+                address: addressController.text.trim(),
+              );
+
+              Navigator.pop(ctx);
+              Get.snackbar("Success", "Customer ${newCust.name} created & selected!",
+                  backgroundColor: Colors.green, colorText: Colors.white);
+            },
+            icon: const Icon(Icons.check_rounded, color: Colors.white),
+            label: const Text("Save & Select", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTotals() {
@@ -860,32 +1234,119 @@ class PosView extends GetView<PosController> {
     ));
   }
 
-  Widget _buildPaymentMethods() {
-    final theme = Theme.of(Get.context!);
-    final methods = ["Cash", "UPI", "Card", "Net Banking", "Wallet", "Split"];
-    return Obx(() => Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: methods.map((m) => Expanded(
-        child: InkWell(
-          onTap: () => controller.selectedPaymentMethod.value = m,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(vertical: 12),
+
+
+  Widget _buildMobileBillingPanel(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Customer & Invoice Header
+          Container(
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              border: Border.all(color: controller.selectedPaymentMethod.value == m ? theme.colorScheme.primary : theme.dividerColor),
-              borderRadius: BorderRadius.circular(8),
-              color: controller.selectedPaymentMethod.value == m ? theme.colorScheme.primary.withOpacity(0.05) : theme.cardColor,
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
             ),
-            child: Center(
-              child: Text(m, style: TextStyle(
-                color: controller.selectedPaymentMethod.value == m ? theme.colorScheme.primary : theme.textTheme.bodyMedium?.color,
-                fontSize: 12,
-                fontWeight: controller.selectedPaymentMethod.value == m ? FontWeight.bold : FontWeight.normal
-              )),
+            child: Column(
+              children: [
+                _buildInvoiceHeader(),
+                const SizedBox(height: 10),
+                _buildCustomerSelector(),
+              ],
             ),
           ),
-        ),
-      )).toList(),
-    ));
+          const SizedBox(height: 12),
+
+          // Cart Items Section
+          Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Obx(() {
+              if (controller.cart.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.shopping_cart_outlined, size: 36, color: theme.dividerColor),
+                        const SizedBox(height: 8),
+                        Text('Cart is empty', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('Switch to PRODUCTS tab to add items', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.4), fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Cart Items (${controller.cart.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      TextButton.icon(
+                        onPressed: () => controller.clearCart(),
+                        icon: Icon(Icons.delete_outline, size: 16, color: theme.colorScheme.error),
+                        label: Text("Clear", style: TextStyle(color: theme.colorScheme.error, fontSize: 12)),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: controller.cart.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = controller.cart[index];
+                      return CartItemTile(
+                        index: index + 1,
+                        item: item,
+                        onUpdateQuantity: (delta) => controller.updateQuantity(item.product.id, delta),
+                        onDelete: () => controller.updateQuantity(item.product.id, -item.quantity),
+                      );
+                    },
+                  ),
+                ],
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+
+          // Summary & Checkout
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Column(
+              children: [
+                _buildTotals(),
+                const SizedBox(height: 16),
+                Obx(() => CheckoutAction(
+                  amount: controller.grandTotal,
+                  receivedAmount: controller.receivedAmount.value,
+                  isLoading: controller.isLoading.value,
+                  onTap: () => controller.processCheckout(controller.selectedPaymentMethod.value),
+                )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
   }
 }

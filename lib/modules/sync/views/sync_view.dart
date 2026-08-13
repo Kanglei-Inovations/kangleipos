@@ -294,9 +294,18 @@ class _MobileSyncStatusCard extends GetView<SyncController> {
   }
 }
 
-class _MobileQrScanCard extends StatelessWidget {
+class _MobileQrScanCard extends StatefulWidget {
+  @override
+  State<_MobileQrScanCard> createState() => _MobileQrScanCardState();
+}
+
+class _MobileQrScanCardState extends State<_MobileQrScanCard> {
+  final TextEditingController _ipController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
+    final syncCtrl = Get.find<SyncController>();
+
     return GlassPanel(
       borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(20),
@@ -306,7 +315,7 @@ class _MobileQrScanCard extends StatelessWidget {
           const Text('Connect to Desktop',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          Text('Scan the QR code shown on your desktop Kanglei POS app',
+          Text('Scan the QR code shown on your desktop Kanglei POS app or enter PC IP',
               style: TextStyle(fontSize: 13, color: Colors.grey[600])),
           const SizedBox(height: 16),
           SizedBox(
@@ -314,7 +323,7 @@ class _MobileQrScanCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => _openScanner(context),
               icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('Scan QR Code'),
+              label: const Text('Scan Desktop QR Code'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -323,6 +332,53 @@ class _MobileQrScanCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12)),
               ),
             ),
+          ),
+          const SizedBox(height: 14),
+          const Row(
+            children: [
+              Expanded(child: Divider()),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Text('OR ENTER MANUAL IP', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
+              Expanded(child: Divider()),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _ipController,
+                  decoration: InputDecoration(
+                    hintText: '10.32.127.69 or 10.150.1.196',
+                    labelText: 'Desktop IP',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () async {
+                  final ip = _ipController.text.trim();
+                  if (ip.isEmpty) return;
+                  Get.snackbar('Connecting...', 'Connecting to $ip:8765...', duration: const Duration(seconds: 3));
+                  final success = await syncCtrl.connectAndSync(ip, 8765, syncCtrl.serverToken.value);
+                  if (success) {
+                    Get.snackbar('Connected!', 'Successfully connected to PC ($ip)', backgroundColor: Colors.green, colorText: Colors.white);
+                  } else {
+                    Get.snackbar('Connection Failed', 'Could not reach $ip:8765. Ensure Windows Firewall port 8765 is allowed.', backgroundColor: Colors.red, colorText: Colors.white);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Connect'),
+              ),
+            ],
           ),
         ],
       ),
@@ -361,7 +417,7 @@ class _MobileSyncActions extends GetView<SyncController> {
             title: 'Push to Desktop',
             subtitle: 'Upload mobile sales & purchases to desktop',
             color: Colors.green,
-            onTap: () => controller.pushToDesktop([], []),
+            onTap: () => controller.pushAllMobileDataToDesktop(),
           ),
         ],
       ),
