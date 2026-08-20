@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart' as d;
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import '../core/services/preference_service.dart';
 import '../database/database.dart';
@@ -13,12 +15,15 @@ class SyncClientService extends GetxService {
   String? _serverIp;
   int _serverPort = 8765;
   String? _token;
+  Timer? _heartbeatTimer;
 
   final RxBool isSyncing = false.obs;
   final RxBool isConnected = false.obs;
   final RxString syncStatus = ''.obs;
   final RxDouble syncProgress = 0.0.obs;
   final RxString lastSyncTime = 'Never'.obs;
+  final RxString serverIp = ''.obs;
+  final RxInt serverPort = 8765.obs;
 
   Future<SyncClientService> init() async {
     try {
@@ -31,22 +36,59 @@ class SyncClientService extends GetxService {
         _serverIp = savedIp;
         _serverPort = savedPort;
         _token = savedToken;
-        isConnected.value = true;
+        serverIp.value = savedIp;
+        serverPort.value = savedPort;
         _logger.i('Restored sync connection config to $_serverIp:$_serverPort');
+        await checkConnection();
+      } else {
+        isConnected.value = false;
       }
-    } catch (_) {}
+    } catch (_) {
+      isConnected.value = false;
+    }
+
+    _startHeartbeat();
     return this;
   }
 
-  void configure(String ip, int port, String token) {
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_serverIp != null && _serverIp!.isNotEmpty) {
+        checkConnection();
+      } else {
+        isConnected.value = false;
+      }
+    });
+  }
+
+  Future<bool> checkConnection() async {
+    if (_serverIp == null || _serverIp!.isEmpty) {
+      isConnected.value = false;
+      return false;
+    }
+    final ok = await ping();
+    isConnected.value = ok;
+    return ok;
+  }
+
+  @override
+  void onClose() {
+    _heartbeatTimer?.cancel();
+    super.onClose();
+  }
+
+  Future<bool> configure(String ip, int port, String token) async {
     _serverIp = ip;
     _serverPort = port;
     _token = token;
-    isConnected.value = true;
+    serverIp.value = ip;
+    serverPort.value = port;
     try {
       final pref = Get.find<PreferenceService>();
       pref.saveSyncConfig(ip, port, token);
     } catch (_) {}
+    return await checkConnection();
   }
 
   String get baseUrl => 'http://$_serverIp:$_serverPort';
@@ -83,7 +125,7 @@ class SyncClientService extends GetxService {
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       await _importAll(data);
 
-      lastSyncTime.value = DateTime.now().toLocal().toString().substring(0, 16);
+      lastSyncTime.value = DateFormat('dd-MM-yyyy h:mm a').format(DateTime.now());
       syncStatus.value = '✅ Sync complete! Last: ${lastSyncTime.value}';
       syncProgress.value = 1.0;
       return true;
@@ -235,7 +277,12 @@ class SyncClientService extends GetxService {
           'customers': customers,
         }),
       ).timeout(const Duration(seconds: 15));
-      return resp.statusCode == 200;
+      if (resp.statusCode == 200) {
+        lastSyncTime.value = DateFormat('dd-MM-yyyy h:mm a').format(DateTime.now());
+        syncStatus.value = '✅ Push complete! Last: ${lastSyncTime.value}';
+        return true;
+      }
+      return false;
     } catch (e) {
       _logger.e('Push failed: $e');
       return false;
@@ -243,12 +290,12 @@ class SyncClientService extends GetxService {
   }
 
   Future<bool> ping() async {
-    if (_serverIp == null) return false;
+    if (_serverIp == null || _serverIp!.isEmpty) return false;
     try {
       final resp = await http.get(
         Uri.parse('$baseUrl/ping'),
         headers: _headers,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 3));
       return resp.statusCode == 200;
     } catch (_) {
       return false;
@@ -256,9 +303,8 @@ class SyncClientService extends GetxService {
   }
 
   void connectToServer(String ip, int port) {
-    // Legacy shim
     _serverIp = ip;
     _serverPort = port;
-    isConnected.value = true;
+    checkConnection();
   }
 }

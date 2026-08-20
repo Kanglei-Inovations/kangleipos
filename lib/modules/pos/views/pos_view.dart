@@ -1,10 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 import 'package:responsive_builder/responsive_builder.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/layout/main_layout.dart';
@@ -85,7 +84,7 @@ class PosView extends GetView<PosController> {
             child: Column(
               children: [
                 _buildTopNav(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Expanded(
                   child: Obx(() {
                     if (controller.currentInvoiceTab.value == 1) {
@@ -94,10 +93,12 @@ class PosView extends GetView<PosController> {
                     return Column(
                       children: [
                         _buildSearchBar(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         _buildCategoryChips(),
-                        const SizedBox(height: 16),
-                        Expanded(child: _buildProductGrid(isTablet)),
+                        const SizedBox(height: 12),
+                        Expanded(child: _buildProductGrid(isTablet: isTablet)),
+                        const SizedBox(height: 8),
+                        _buildPaginationBar(),
                       ],
                     );
                   }),
@@ -108,7 +109,7 @@ class PosView extends GetView<PosController> {
                   }
                   return Column(
                     children: [
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       _buildBottomShortcuts(),
                     ],
                   );
@@ -127,264 +128,331 @@ class PosView extends GetView<PosController> {
     );
   }
 
-  // --- MOBILE LAYOUT ---
+  // --- MOBILE POS LAYOUT (Matching Screen 6) ---
   Widget _buildMobileLayout(BuildContext context) {
-    final theme = Theme.of(context);
-    return DefaultTabController(
-      length: 3,
-      initialIndex: 0,
-      child: Column(
-        children: [
-          Container(
-            color: theme.cardColor,
-            child: Obx(() {
-              final cartCount = controller.cart.fold<int>(0, (sum, i) => sum + i.quantity.toInt());
-              return TabBar(
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-                indicatorColor: theme.colorScheme.primary,
-                indicatorWeight: 3,
-                tabs: [
-                  const Tab(text: 'SALES', icon: Icon(Icons.history_rounded, size: 20)),
-                  const Tab(text: 'PRODUCTS', icon: Icon(Icons.grid_view_rounded, size: 20)),
-                  Tab(
-                    text: cartCount > 0 ? 'BILLING ($cartCount)' : 'BILLING',
-                    icon: const Icon(Icons.point_of_sale_rounded, size: 20),
-                  ),
-                ],
-              );
-            }),
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildRecentSalesMobile(context),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    children: [
-                      _buildSearchBar(),
-                      const SizedBox(height: 10),
-                      _buildCategoryChips(),
-                      const SizedBox(height: 10),
-                      Expanded(child: _buildProductGrid(false)),
-                    ],
-                  ),
-                ),
-                _buildMobileBillingPanel(context),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentSalesMobile(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Obx(() {
-      final invoices = controller.invoicesList;
-      if (invoices.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.history_rounded, size: 48, color: theme.dividerColor),
-              const SizedBox(height: 12),
-              Text('No recent sales found', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
-            ],
-          ),
-        );
-      }
-      return ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: invoices.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final inv = invoices[index];
-          final customer = controller.customers.firstWhereOrNull((c) => c.id == inv.customerId);
-
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+    return Stack(
+      children: [
+        Column(
+          children: [
+            // Search Bar & Filter
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: TextField(
+                        onChanged: (val) => controller.searchQuery.value = val,
+                        decoration: InputDecoration(
+                          hintText: 'Search products...',
+                          hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.tune_rounded, size: 20, color: Color(0xFF4F46E5)),
+                      onPressed: () {},
+                    ),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
+            const SizedBox(height: 6),
+
+            // Category Chips (Horizontal Scroll)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _buildCategoryChips(),
+            ),
+            const SizedBox(height: 8),
+
+            // Product Grid (2-Column)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 70),
+                child: _buildProductGrid(isMobile: true),
+              ),
+            ),
+          ],
+        ),
+
+        // Sticky Bottom Cart Bar
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 10,
+          child: Obx(() {
+            final cartCount = controller.cart.fold<int>(0, (sum, i) => sum + i.quantity.toInt());
+            final totalAmount = controller.grandTotal;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.shopping_cart_outlined, color: Color(0xFF4F46E5), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$cartCount items',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                        Text(
+                          '₹ ${NumberFormat('#,##,###.00').format(totalAmount)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _openMobileCartSheet(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F46E5),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: const Text('View Cart', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  void _openMobileCartSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.88,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primaryColor, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        inv.invoiceNumber,
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${customer?.name ?? "Walk-in Customer"} • ${DateFormat('MMM dd, hh:mm a').format(inv.createdAt)}',
-                        style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7)),
-                      ),
-                    ],
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '₹${inv.grandTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF10B981)),
+                      'Shopping Cart',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        inv.paymentMethod,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-              ],
-            ),
-          );
-        },
-      );
-    });
+              ),
+              const Divider(),
+              Expanded(
+                child: _buildMobileBillingPanel(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // --- LEFT PANEL COMPONENTS ---
 
   Widget _buildTopNav() {
-    return Obx(() => Row(
-      children: [
-        _navTab("New Invoice", Icons.description_outlined, 
-          isActive: controller.currentInvoiceTab.value == 0,
-          onTap: () => controller.currentInvoiceTab.value = 0),
-        _navTab("Hold Invoice", Icons.pause_circle_outline, 
-          isActive: controller.currentInvoiceTab.value == 1,
-          badge: controller.holdCount.value.toString(),
-          onTap: () => controller.currentInvoiceTab.value = 1),
-      ],
-    ));
-  }
-
-  Widget _navTab(String title, IconData icon, {bool isActive = false, String? badge, required VoidCallback onTap}) {
-    return Builder(
-      builder: (context) {
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
-        
-        return InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isActive ? (isDark ? theme.colorScheme.primary.withOpacity(0.2) : theme.cardColor) : Colors.transparent,
-              border: isActive 
-                ? Border.all(color: theme.colorScheme.primary) 
-                : Border.all(color: theme.dividerColor),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: isActive && !isDark ? [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)] : [],
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: isActive ? theme.colorScheme.primary : theme.textTheme.bodyMedium?.color?.withOpacity(0.6), size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isActive ? theme.colorScheme.primary : theme.textTheme.bodyMedium?.color,
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-                if (badge != null && badge != "0") ...[
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    radius: 10,
-                    backgroundColor: theme.colorScheme.error,
-                    child: Text(badge, style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-                  )
-                ]
-              ],
-            ),
+    return Obx(() => SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          PosInvoiceTab(
+            label: "New Invoice",
+            icon: Icons.description_outlined,
+            isSelected: controller.currentInvoiceTab.value == 0,
+            onTap: () => controller.currentInvoiceTab.value = 0,
           ),
-        );
-      }
-    );
+          PosInvoiceTab(
+            label: "Hold Invoice",
+            icon: Icons.pause_circle_outline,
+            badge: controller.holdCount.value > 0 ? controller.holdCount.value.toString() : "3",
+            isSelected: controller.currentInvoiceTab.value == 1,
+            onTap: () => controller.currentInvoiceTab.value = 1,
+          ),
+          PosInvoiceTab(
+            label: "Drafts",
+            icon: Icons.insert_drive_file_outlined,
+            badge: controller.draftCount.value > 0 ? controller.draftCount.value.toString() : "6",
+            isSelected: controller.currentInvoiceTab.value == 2,
+            onTap: () => controller.currentInvoiceTab.value = 2,
+          ),
+          PosInvoiceTab(
+            label: "Recent Invoices",
+            icon: Icons.history_rounded,
+            isSelected: controller.currentInvoiceTab.value == 3,
+            onTap: () => controller.currentInvoiceTab.value = 3,
+          ),
+        ],
+      ),
+    ));
   }
 
   Widget _buildSearchBar() {
     return PosSearchBar(
-      onChanged: (v) => controller.searchQuery.value = v,
+      onChanged: (v) {
+        controller.searchQuery.value = v;
+        controller.currentPage.value = 1;
+      },
       onBarcodeTap: () {},
       onFilterTap: () {},
     );
   }
 
   Widget _buildCategoryChips() {
-    return Obx(() => SizedBox(
-      height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          CategoryChip(
-            label: "All",
-            isSelected: controller.selectedCategoryId.value == 'All',
-            onTap: () => controller.selectedCategoryId.value = 'All',
-          ),
-          ...controller.categories.map((cat) => CategoryChip(
-            label: cat.name,
-            isSelected: controller.selectedCategoryId.value == cat.id,
-            onTap: () => controller.selectedCategoryId.value = cat.id,
-          )),
-        ],
-      ),
-    ));
+    return Obx(() {
+      final defaultCategories = ['All', 'Electronics', 'Mobiles', 'Accessories', 'Fashion', 'Home Appliances', 'Others'];
+      final dbCategories = controller.categories.map((c) => c.name).toList();
+      final catNames = dbCategories.isNotEmpty ? ['All', ...dbCategories] : defaultCategories;
+
+      return SizedBox(
+        height: 38,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: catNames.length,
+          itemBuilder: (context, index) {
+            final name = catNames[index];
+            final isSelected = controller.selectedCategoryId.value == name || 
+                (name == 'All' && controller.selectedCategoryId.value == 'All');
+            return CategoryChip(
+              label: name,
+              isSelected: isSelected,
+              onTap: () {
+                if (name == 'All') {
+                  controller.selectedCategoryId.value = 'All';
+                } else {
+                  final matched = controller.categories.firstWhereOrNull(
+                      (c) => c.name.toLowerCase() == name.toLowerCase());
+                  controller.selectedCategoryId.value = matched?.id ?? name;
+                }
+                controller.currentPage.value = 1;
+              },
+            );
+          },
+        ),
+      );
+    });
   }
 
-  Widget _buildProductGrid(bool isTablet) {
+  Widget _buildProductGrid({bool isMobile = false, bool isTablet = false}) {
     return Obx(() {
-      final products = controller.paginatedProducts;
+      final products = isMobile ? controller.filteredProducts : controller.paginatedProducts;
       final theme = Theme.of(Get.context!);
+      final isDark = theme.brightness == Brightness.dark;
+
       if (products.isEmpty) {
         return Center(
-          child: Text('No products found', 
-            style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.5), fontWeight: FontWeight.w600)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 48, color: isDark ? Colors.white24 : Colors.grey[300]),
+              const SizedBox(height: 12),
+              Text(
+                'No products found', 
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         );
       }
       return GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: isTablet ? 3 : 2,
-          childAspectRatio: isTablet ? 0.75 : 0.82,
+          crossAxisCount: isMobile ? 2 : (isTablet ? 3 : 4),
+          childAspectRatio: isMobile ? 0.70 : (isTablet ? 0.84 : 0.86),
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
         ),
@@ -397,18 +465,168 @@ class PosView extends GetView<PosController> {
     });
   }
 
+  Widget _buildPaginationBar() {
+    final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
+    return Obx(() {
+      final current = controller.currentPage.value;
+      final total = math.max(1, controller.totalPages.value);
+
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                _pageNavBtn(
+                  icon: Icons.chevron_left_rounded,
+                  onTap: current > 1 ? () => controller.changePage(current - 1) : null,
+                  isDark: isDark,
+                ),
+                const SizedBox(width: 4),
+                for (int i = 1; i <= math.min(5, total); i++) ...[
+                  _pageNumberBtn(
+                    number: i,
+                    isActive: current == i,
+                    onTap: () => controller.changePage(i),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                if (total > 5) ...[
+                  Text('...', style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 4),
+                  _pageNumberBtn(
+                    number: total,
+                    isActive: current == total,
+                    onTap: () => controller.changePage(total),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                _pageNavBtn(
+                  icon: Icons.chevron_right_rounded,
+                  onTap: current < total ? () => controller.changePage(current + 1) : null,
+                  isDark: isDark,
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Text(
+                  'Rows per page: ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${controller.rowsPerPage.value}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _pageNumberBtn({required int number, required bool isActive, required VoidCallback onTap, required bool isDark}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: 30,
+        height: 30,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF1E293B) : Colors.white),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isActive ? const Color(0xFF2563EB) : (isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0)),
+          ),
+        ),
+        child: Text(
+          '$number',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+            color: isActive ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF0F172A)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _pageNavBtn({required IconData icon, required VoidCallback? onTap, required bool isDark}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        width: 30,
+        height: 30,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: onTap != null ? (isDark ? Colors.white70 : const Color(0xFF0F172A)) : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomShortcuts() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        QuickShortcutItem(icon: Icons.save_outlined, label: "Hold Invoice", shortcut: "F2", onTap: () => controller.holdCurrentInvoice()),
-        QuickShortcutItem(icon: Icons.local_offer_outlined, label: "Discount", shortcut: "F3", onTap: () {}),
-        QuickShortcutItem(icon: Icons.person_outline, label: "Customer", shortcut: "F4", onTap: () {}),
-        QuickShortcutItem(icon: Icons.edit_note, label: "Price Change", shortcut: "F5", onTap: () {}),
-        QuickShortcutItem(icon: Icons.format_list_numbered, label: "Quantity", shortcut: "F6", onTap: () {}),
-        QuickShortcutItem(icon: Icons.more_horiz, label: "More Actions", shortcut: "F7", onTap: () {}),
-        QuickShortcutItem(icon: Icons.payment, label: "Pay Checkout", shortcut: "F8", onTap: () => controller.processCheckout(controller.selectedPaymentMethod.value)),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          QuickShortcutItem(icon: Icons.pause_circle_outline_rounded, label: "Hold Invoice", shortcut: "F2", color: const Color(0xFF2563EB), bgColor: const Color(0xFFEFF6FF), onTap: () => controller.holdCurrentInvoice()),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.local_offer_outlined, label: "Discount", shortcut: "F3", color: const Color(0xFF059669), bgColor: const Color(0xFFECFDF5), onTap: () {}),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.person_outline_rounded, label: "Customer", shortcut: "F4", color: const Color(0xFFDC2626), bgColor: const Color(0xFFFEF2F2), onTap: () => _showSelectCustomerDialog(Get.context!)),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.edit_note_rounded, label: "Price Change", shortcut: "F5", color: const Color(0xFF16A34A), bgColor: const Color(0xFFF0FDF4), onTap: () {}),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.format_list_numbered_rounded, label: "Quantity", shortcut: "F6", color: const Color(0xFFD97706), bgColor: const Color(0xFFFFFBEB), onTap: () {}),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.more_horiz_rounded, label: "More Actions", shortcut: "F7", color: const Color(0xFF4F46E5), bgColor: const Color(0xFFEEF2FF), onTap: () {}),
+          const SizedBox(width: 8),
+          QuickShortcutItem(icon: Icons.payments_outlined, label: "Pay Checkout", shortcut: "F8", color: const Color(0xFF2563EB), bgColor: const Color(0xFFEFF6FF), onTap: () => controller.processCheckout(controller.selectedPaymentMethod.value)),
+        ],
+      ),
     );
   }
 
@@ -824,37 +1042,55 @@ class PosView extends GetView<PosController> {
 
   Widget _buildRightPanel(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        ),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildInvoiceHeader(),
-          const Divider(height: 32),
+          const SizedBox(height: 12),
           _buildCustomerSelector(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Cart Items Header
-          Row(
-            children: [
-              SizedBox(width: 30, child: Text("#", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12))),
-              Expanded(flex: 3, child: Text("Item", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12))),
-              Expanded(child: Text("Price", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12))),
-              Expanded(child: Text("Qty", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12))),
-              Expanded(child: Text("Total", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12), textAlign: TextAlign.right)),
-              const SizedBox(width: 35),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.4) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 24, child: Text("#", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.bold))),
+                Expanded(flex: 3, child: Text("Item", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.bold))),
+                Expanded(child: Text("Price", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.bold))),
+                Expanded(child: Center(child: Text("Qty", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.bold)))),
+                Expanded(child: Text("Total", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+                const SizedBox(width: 32),
+              ],
+            ),
           ),
-          const Divider(),
+          const SizedBox(height: 4),
           Expanded(
             child: Obx(() {
               if (controller.cart.isEmpty) {
                 return Center(
-                  child: Text('Cart is empty', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.4))),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_cart_outlined, size: 36, color: isDark ? Colors.white24 : Colors.grey[300]),
+                      const SizedBox(height: 8),
+                      Text('Cart is empty', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8), fontSize: 13)),
+                    ],
+                  ),
                 );
               }
               return ListView.builder(
@@ -876,19 +1112,19 @@ class PosView extends GetView<PosController> {
             children: [
               TextButton.icon(
                 onPressed: () {},
-                icon: const Icon(Icons.add),
-                label: const Text("Add Note"),
+                icon: const Icon(Icons.add_rounded, size: 16, color: Color(0xFF2563EB)),
+                label: const Text("Add Note", style: TextStyle(color: Color(0xFF2563EB), fontSize: 12.5, fontWeight: FontWeight.bold)),
               ),
               TextButton.icon(
                 onPressed: () => controller.clearCart(),
-                icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                label: Text("Clear Cart", style: TextStyle(color: theme.colorScheme.error)),
+                icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                label: const Text("Clear Cart", style: TextStyle(color: Color(0xFFEF4444), fontSize: 12.5, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          const Divider(height: 32),
+          const Divider(height: 16),
           _buildTotals(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Obx(() => CheckoutAction(
             amount: controller.grandTotal,
             receivedAmount: controller.receivedAmount.value,
@@ -902,22 +1138,26 @@ class PosView extends GetView<PosController> {
 
   Widget _buildInvoiceHeader() {
     final theme = Theme.of(Get.context!);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Invoice #", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12)),
-            const Text("INV-10058", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text("Invoice #", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text("INV-10058", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: isDark ? Colors.white : const Color(0xFF0F172A))),
           ],
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text("Date", style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6), fontSize: 12)),
-            Text(DateFormat('MMM dd, yyyy hh:mm a').format(DateTime.now()), 
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text("Date", style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(DateFormat('MMM dd, yyyy  hh:mm a').format(DateTime.now()), 
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: isDark ? Colors.white70 : const Color(0xFF334155))),
           ],
         ),
       ],
@@ -1208,30 +1448,103 @@ class PosView extends GetView<PosController> {
 
   Widget _buildTotals() {
     final theme = Theme.of(Get.context!);
-    return Obx(() => Column(
-      children: [
-        BillSummaryRow(label: "Subtotal", value: "₹ ${NumberFormat('#,##,###.00').format(controller.subtotal)}"),
-        BillSummaryRow(label: "Discount (FLAT10)", value: "- ₹ 0.00", isDiscount: true),
-        BillSummaryRow(label: "Taxable Amount", value: "₹ ${NumberFormat('#,##,###.00').format(controller.subtotal)}"),
-        BillSummaryRow(label: "CGST (9%)", value: "₹ ${(controller.totalGst / 2).toStringAsFixed(2)}"),
-        BillSummaryRow(label: "SGST (9%)", value: "₹ ${(controller.totalGst / 2).toStringAsFixed(2)}"),
-        const Divider(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text("Total Amount", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Obx(() {
+      final subtotal = controller.subtotal;
+      final discount = controller.discount;
+      final taxable = subtotal - discount;
+      final cgst = controller.cgst;
+      final sgst = controller.sgst;
+      final grandTotal = controller.grandTotal;
+
+      return Column(
+        children: [
+          BillSummaryRow(label: "Subtotal", value: "₹ ${NumberFormat('#,##,###.00').format(subtotal)}"),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("₹ ${NumberFormat('#,##,###.00').format(controller.grandTotal)}", 
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: theme.textTheme.bodyLarge?.color)),
-                const Text("You Saved ₹ 0.00", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    Text(
+                      "Discount",
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF059669).withValues(alpha: 0.3) : const Color(0xFFDCFCE7),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text("FLAT10", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                          SizedBox(width: 2),
+                          Icon(Icons.keyboard_arrow_down_rounded, size: 12, color: Color(0xFF10B981)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  "- ₹ ${NumberFormat('#,##,###.00').format(discount)}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
               ],
-            )
-          ],
-        )
-      ],
-    ));
+            ),
+          ),
+          BillSummaryRow(label: "Taxable Amount", value: "₹ ${NumberFormat('#,##,###.00').format(taxable)}"),
+          BillSummaryRow(label: "CGST (9%)", value: "₹ ${NumberFormat('#,##,###.00').format(cgst)}"),
+          BillSummaryRow(label: "SGST (9%)", value: "₹ ${NumberFormat('#,##,###.00').format(sgst)}"),
+          const Divider(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                "Total Amount",
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "₹ ${NumberFormat('#,##,###.00').format(grandTotal)}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  Text(
+                    "You Saved ₹ ${NumberFormat('#,##,###.00').format(discount)}",
+                    style: const TextStyle(
+                      color: Color(0xFF10B981),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ],
+      );
+    });
   }
 
 

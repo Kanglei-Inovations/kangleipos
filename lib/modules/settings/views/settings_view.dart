@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-
+import 'package:get/get.dart';
 import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../backup/views/backup_view.dart';
+import '../../sync/controllers/sync_controller.dart';
 import '../../sync/views/sync_view.dart';
 import '../../users/views/user_view.dart';
 
@@ -28,7 +30,25 @@ class _SettingsViewState extends State<SettingsView> {
       title: 'Settings',
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 768;
           final isDesktop = constraints.maxWidth >= 1280;
+
+          if (isMobile) {
+            if (_activeTab != 'Business Settings') {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _SettingsSubHeader(
+                    title: _activeTab,
+                    onBack: () => _selectTab('Business Settings'),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(child: _buildActiveTabContent()),
+                ],
+              );
+            }
+            return _MobileSettingsView(onSelectTab: _selectTab);
+          }
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,3 +576,435 @@ class _SettingsCard extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────
+// MOBILE SETTINGS VIEW (Matching Screen 8)
+// ─────────────────────────────────────────────────────────
+class _MobileSettingsView extends StatelessWidget {
+  final ValueChanged<String> onSelectTab;
+
+  const _MobileSettingsView({required this.onSelectTab});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<SyncController>()) Get.put(SyncController());
+    final syncCtrl = Get.find<SyncController>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. SYNC MANAGEMENT CARD
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sync Management',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Sync Status
+                Obx(() => Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.wifi_rounded, size: 16, color: Color(0xFF4F46E5)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Sync Status',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: syncCtrl.isConnected.value
+                            ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        syncCtrl.isConnected.value ? 'Connected' : 'Disconnected',
+                        style: TextStyle(
+                          color: syncCtrl.isConnected.value ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                )),
+                const SizedBox(height: 12),
+                // Last Sync
+                Obx(() => Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF4F46E5)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Last Sync',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      syncCtrl.lastSyncTime.value,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                )),
+                const SizedBox(height: 12),
+                // Auto Sync
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.sync_rounded, size: 16, color: Color(0xFF4F46E5)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Auto Sync',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Every 5 Minutes',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right_rounded, size: 16, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // Scan QR Action Tile
+                _buildActionTile(
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: 'Scan QR Code',
+                  subtitle: 'Connect or pair with Desktop PC',
+                  color: const Color(0xFF4F46E5),
+                  isDark: isDark,
+                  onTap: () => Get.to(() => const QrScannerPage()),
+                ),
+                const SizedBox(height: 14),
+                // Action Buttons: Pull Data & Push Data
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: Obx(() => ElevatedButton.icon(
+                          onPressed: (syncCtrl.isPulling.value || syncCtrl.isPushing.value) ? null : () => syncCtrl.syncNow(),
+                          icon: syncCtrl.isPulling.value
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.download_rounded, size: 18),
+                          label: const Text('Pull Data', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F46E5),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                        )),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: Obx(() => OutlinedButton.icon(
+                          onPressed: (syncCtrl.isPulling.value || syncCtrl.isPushing.value)
+                              ? null
+                              : () async {
+                                  await syncCtrl.pushAllMobileDataToDesktop();
+                                },
+                          icon: syncCtrl.isPushing.value
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.upload_rounded, size: 18),
+                          label: const Text('Push Data', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFF58E18F),
+                            foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                            side: BorderSide(
+                              color: isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFE2E8F0),
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        )),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 3. CONNECTION MANAGEMENT CARD
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Connection Management',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildActionTile(
+                  icon: Icons.print_outlined,
+                  title: 'Printer Settings',
+                  subtitle: 'Configure printer connection',
+                  color: const Color(0xFF6366F1),
+                  isDark: isDark,
+                  onTap: () {},
+                ),
+                const SizedBox(height: 8),
+                _buildActionTile(
+                  icon: Icons.devices_outlined,
+                  title: 'Connected Devices',
+                  subtitle: '1 Active Device',
+                  color: const Color(0xFF0EA5E9),
+                  isDark: isDark,
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 4. APP SETTINGS CARD
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'App Settings',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _buildActionTile(
+                  icon: Icons.settings_outlined,
+                  title: 'General Settings',
+                  subtitle: 'App preferences & theme',
+                  color: const Color(0xFF8B5CF6),
+                  isDark: isDark,
+                  onTap: () {},
+                ),
+                const SizedBox(height: 8),
+                _buildActionTile(
+                  icon: Icons.people_outline_rounded,
+                  title: 'User & Role Settings',
+                  subtitle: 'Manage user access',
+                  color: const Color(0xFFF59E0B),
+                  isDark: isDark,
+                  onTap: () => onSelectTab('User & Role Settings'),
+                ),
+                const SizedBox(height: 8),
+                _buildActionTile(
+                  icon: Icons.backup_outlined,
+                  title: 'Backup & Restore',
+                  subtitle: 'Database backups',
+                  color: const Color(0xFF10B981),
+                  isDark: isDark,
+                  onTap: () => onSelectTab('Backup Settings'),
+                ),
+                const SizedBox(height: 8),
+                _buildActionTile(
+                  icon: Icons.logout_rounded,
+                  title: 'Logout',
+                  subtitle: 'Sign out of current account',
+                  color: const Color(0xFFEF4444),
+                  isDark: isDark,
+                  onTap: () {
+                    if (Get.isRegistered<AuthController>()) {
+                      Get.find<AuthController>().logout();
+                    } else {
+                      Get.offAllNamed('/auth');
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

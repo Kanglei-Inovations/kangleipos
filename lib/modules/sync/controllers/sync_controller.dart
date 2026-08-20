@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../database/database.dart';
 import '../../../sync/sync_server.dart';
 import '../../../sync/sync_client.dart';
@@ -13,6 +14,8 @@ class SyncController extends GetxController {
   final RxBool isServerRunning = false.obs;
   final RxBool isConnected = false.obs;
   final RxBool isSyncing = false.obs;
+  final RxBool isPulling = false.obs;
+  final RxBool isPushing = false.obs;
   final RxString syncStatus = 'Ready'.obs;
   final RxDouble syncProgress = 0.0.obs;
   final RxString lastSyncTime = 'Never'.obs;
@@ -30,7 +33,7 @@ class SyncController extends GetxController {
 
     // Mirror reactive values from services
     ever(_server.isRunning, (v) => isServerRunning.value = v);
-    ever(_client.isSyncing, (v) => isSyncing.value = v);
+    ever(_client.isSyncing, (v) => isSyncing.value = v || isPulling.value || isPushing.value);
     ever(_client.syncStatus, (v) => syncStatus.value = v);
     ever(_client.syncProgress, (v) => syncProgress.value = v);
     ever(_client.lastSyncTime, (v) => lastSyncTime.value = v);
@@ -52,6 +55,8 @@ class SyncController extends GetxController {
 
     if (isDesktop.value && !_server.isRunning.value) {
       _server.startServer();
+    } else if (!isDesktop.value) {
+      _client.checkConnection();
     }
   }
 
@@ -66,7 +71,12 @@ class SyncController extends GetxController {
 
   /// Called when mobile scans the QR code or enters IP
   Future<bool> connectAndSync(String ip, int port, String token) async {
-    _client.configure(ip, port, token);
+    final ok = await _client.configure(ip, port, token);
+    if (!ok) {
+      isConnected.value = false;
+      syncStatus.value = 'Could not reach server at $ip:$port';
+      return false;
+    }
     isConnected.value = true;
     return await _client.syncFromDesktop();
   }
@@ -78,21 +88,26 @@ class SyncController extends GetxController {
           backgroundColor: Colors.orange, colorText: Colors.white);
       return false;
     }
-    final success = await _client.syncFromDesktop();
-    if (success) {
-      Get.snackbar('Sync Complete', 'Downloaded latest data from Desktop PC',
-          backgroundColor: Colors.green, colorText: Colors.white);
-    } else {
-      Get.snackbar('Sync Failed', _client.syncStatus.value,
-          backgroundColor: Colors.red, colorText: Colors.white);
+    isPulling.value = true;
+    try {
+      final success = await _client.syncFromDesktop();
+      if (success) {
+        Get.snackbar('Pull Complete', 'Downloaded latest catalog & data from Desktop PC',
+            backgroundColor: Colors.green, colorText: Colors.white);
+      } else {
+        Get.snackbar('Pull Failed', _client.syncStatus.value,
+            backgroundColor: Colors.red, colorText: Colors.white);
+      }
+      return success;
+    } finally {
+      isPulling.value = false;
     }
-    return success;
   }
 
   Future<bool> pushAllMobileDataToDesktop() async {
     final db = Get.find<AppDatabase>();
+    isPushing.value = true;
     try {
-      isSyncing.value = true;
       syncStatus.value = 'Preparing mobile data for push...';
 
       final invoices = await db.select(db.invoices).get();
@@ -133,7 +148,7 @@ class SyncController extends GetxController {
         'createdAt': c.createdAt.toIso8601String(),
       }).toList();
 
-      syncStatus.value = 'Pushing ${salesList.length} sales, ${purchasesList.length} purchases & ${customersData.length} customers to Desktop...';
+      syncStatus.value = 'Pushing ${salesList.length} sales & ${customersData.length} customers to Desktop...';
 
       final success = await _client.pushToDesktop(
         salesList,
@@ -141,7 +156,8 @@ class SyncController extends GetxController {
         customers: customersData,
       );
       if (success) {
-        syncStatus.value = '✅ Pushed ${salesList.length} sales, ${purchasesList.length} purchases & ${customersData.length} customers!';
+        lastSyncTime.value = DateFormat('dd-MM-yyyy h:mm a').format(DateTime.now());
+        syncStatus.value = '✅ Pushed ${salesList.length} sales & ${customersData.length} customers!';
         Get.snackbar(
           'Push Complete',
           'Uploaded ${salesList.length} sales & ${customersData.length} customers to PC',
@@ -159,7 +175,7 @@ class SyncController extends GetxController {
       Get.snackbar('Error', 'Push error: $e', backgroundColor: Colors.red, colorText: Colors.white);
       return false;
     } finally {
-      isSyncing.value = false;
+      isPushing.value = false;
     }
   }
 

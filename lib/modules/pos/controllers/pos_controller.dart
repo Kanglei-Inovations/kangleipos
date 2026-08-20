@@ -28,7 +28,7 @@ class PosController extends GetxController {
 
   // Pagination & Filtering
   final RxInt currentPage = 1.obs;
-  final RxInt rowsPerPage = 20.obs;
+  final RxInt rowsPerPage = 12.obs;
   final RxInt totalPages = 1.obs;
   final RxString selectedBrandId = 'All'.obs;
   final Rx<RangeValues> priceRange = const RangeValues(0, 100000).obs;
@@ -232,7 +232,10 @@ class PosController extends GetxController {
   // CALCULATIONS
   double get subtotal => cart.fold(0, (sum, item) => sum + item.subtotal);
   double get totalGst => cart.fold(0, (sum, item) => sum + item.gstAmount);
-  double get grandTotal => subtotal + totalGst;
+  double get cgst => totalGst / 2;
+  double get sgst => totalGst / 2;
+  double get discount => 0.0;
+  double get grandTotal => subtotal + totalGst - discount;
 
   // Checkout Logic
   Future<void> processCheckout(String paymentMethod) async {

@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:drift/drift.dart' as d;
 import '../../../database/database.dart';
 import 'package:uuid/uuid.dart';
+import '../../../sync/sync_client.dart';
 
 class CustomerController extends GetxController {
   final AppDatabase db = Get.find<AppDatabase>();
@@ -56,6 +57,20 @@ class CustomerController extends GetxController {
     double openingBalance = 0,
   }) async {
     final id = _uuid.v4();
+    final now = DateTime.now();
+    final newCust = Customer(
+      id: id,
+      name: name,
+      phone: phone,
+      email: email,
+      address: address,
+      gstNumber: gst,
+      balanceDue: openingBalance,
+      creditLimit: 0.0,
+      loyaltyPoints: 0.0,
+      createdAt: now,
+    );
+
     await db.into(db.customers).insert(CustomersCompanion(
       id: d.Value(id),
       name: d.Value(name),
@@ -64,13 +79,39 @@ class CustomerController extends GetxController {
       address: d.Value(address),
       gstNumber: d.Value(gst),
       balanceDue: d.Value(openingBalance),
+      createdAt: d.Value(now),
     ));
     await refreshData();
+    _pushCustomerToDesktop(newCust);
   }
 
   Future<void> updateCustomer(Customer customer) async {
     await db.update(db.customers).replace(customer);
     await refreshData();
+    _pushCustomerToDesktop(customer);
+  }
+
+  void _pushCustomerToDesktop(Customer cust) async {
+    try {
+      if (!Get.isRegistered<SyncClientService>()) return;
+      final client = Get.find<SyncClientService>();
+      if (!client.isConnected.value) return;
+
+      await client.pushToDesktop([], [], customers: [
+        {
+          'id': cust.id,
+          'name': cust.name,
+          'phone': cust.phone,
+          'email': cust.email,
+          'address': cust.address,
+          'gstNumber': cust.gstNumber,
+          'balanceDue': cust.balanceDue,
+          'creditLimit': cust.creditLimit,
+          'loyaltyPoints': cust.loyaltyPoints,
+          'createdAt': cust.createdAt.toIso8601String(),
+        }
+      ]);
+    } catch (_) {}
   }
 
   Future<void> deleteCustomer(String id) async {

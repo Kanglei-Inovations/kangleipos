@@ -45,6 +45,7 @@ class DashboardController extends GetxController {
   final RxDouble todayExpenses = 0.0.obs;
   final RxDouble todayPurchases = 0.0.obs;
   final RxDouble totalDue = 0.0.obs;
+  final RxInt totalCustomers = 0.obs;
   final RxInt lowStockCount = 0.obs;
   
   final RxList<DashboardTransaction> unifiedTransactions = <DashboardTransaction>[].obs;
@@ -72,6 +73,7 @@ class DashboardController extends GetxController {
       
       todaySales.value = sales.fold(0.0, (sum, item) => sum + item.grandTotal);
       todayOrders.value = sales.length;
+      totalCustomers.value = customers.length;
       
       todayExpenses.value = expenses.fold(0.0, (sum, item) => sum + item.amount);
       todayPurchases.value = purchases.fold(0.0, (sum, item) => sum + item.grandTotal);
@@ -126,7 +128,7 @@ class DashboardController extends GetxController {
       }
 
       txList.sort((a, b) => b.date.compareTo(a.date));
-      unifiedTransactions.assignAll(txList.take(15).toList());
+      unifiedTransactions.assignAll(txList.take(6).toList());
 
       // 4. Fetch Real Top Selling Products from InvoiceItems
       final allItems = await db.select(db.invoiceItems).get();

@@ -7,7 +7,6 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
-import '../common/glass_panel.dart';
 import 'sidebar.dart';
 
 class MainLayout extends StatefulWidget {
@@ -72,15 +71,16 @@ class _MainLayoutState extends State<MainLayout> {
               ),
               child: Column(
                 children: [
-                  _PremiumHeader(
-                    title: widget.title,
-                    isMobile: isMobile,
-                    isTablet: isTablet,
-                    headerAction: widget.headerAction,
-                    onMenuPressed: isTablet
-                        ? () => Scaffold.of(context).openDrawer()
-                        : null,
-                  ),
+                  if (!isMobile)
+                    _PremiumHeader(
+                      title: widget.title,
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                      headerAction: widget.headerAction,
+                      onMenuPressed: isTablet
+                          ? () => Scaffold.of(context).openDrawer()
+                          : null,
+                    ),
                   Expanded(
                     child: PageTransitionSwitcher(
                       duration: const Duration(milliseconds: 420),
@@ -99,7 +99,7 @@ class _MainLayoutState extends State<MainLayout> {
                           padding: EdgeInsets.only(
                             left: isMobile ? 12 : 24,
                             right: isMobile ? 12 : 24,
-                            top: 8,
+                            top: isMobile ? 12 : 8,
                             bottom: isMobile ? 12 : 20,
                           ),
                           child: widget.child,
@@ -140,14 +140,14 @@ class _PremiumHeader extends StatelessWidget {
 
     return Container(
       clipBehavior: Clip.antiAlias,
-      height: isMobile ? null : 72,
+      height: isMobile ? 56 : 72,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 24,
-        vertical: isMobile ? 10 : 0,
+        horizontal: isMobile ? 8 : 24,
+        vertical: isMobile ? 0 : 0,
       ),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
+        borderRadius: isMobile ? BorderRadius.zero : const BorderRadius.only(topLeft: Radius.circular(20)),
         border: Border(
           bottom: BorderSide(
             color: isDark
@@ -190,68 +190,51 @@ class _PremiumHeader extends StatelessWidget {
   }
 
   Widget _buildMobileHeader(BuildContext context) {
-    final themeController = context.watch<AppThemeController>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canPop = Navigator.canPop(context);
 
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+        if (canPop)
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            color: isDark ? Colors.white : const Color(0xFF1E293B),
+            onPressed: () => Navigator.maybePop(context),
+            splashRadius: 20,
+          )
+        else
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(12),
+            child: const Icon(Icons.point_of_sale_rounded, color: Colors.white, size: 17),
           ),
-          child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 10),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Kanglei POS • Live',
-                    style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ],
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 17,
+              letterSpacing: -0.2,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
           ),
         ),
         if (headerAction != null) ...[
           headerAction!,
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
-        _HeaderIconButton(
-          icon: themeController.isDarkMode
-              ? Icons.light_mode_rounded
-              : Icons.dark_mode_rounded,
-          onTap: themeController.toggleTheme,
-        ),
+        const _NotificationButton(),
       ],
     );
   }
@@ -480,6 +463,8 @@ class _HeaderIconButtonState extends State<_HeaderIconButton> {
 }
 
 class _NotificationButton extends StatelessWidget {
+  const _NotificationButton();
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -660,31 +645,53 @@ class _MobileNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentRoute = Get.currentRoute;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final destinations = [
-      (Icons.dashboard_rounded, 'Dashboard', AppRoutes.DASHBOARD),
-      (Icons.point_of_sale_rounded, 'Selling', AppRoutes.POS),
-      (Icons.sync_rounded, 'Sync', AppRoutes.SYNC),
+      (Icons.home_rounded, Icons.home_outlined, 'Dashboard', AppRoutes.DASHBOARD),
+      (Icons.swap_horiz_rounded, Icons.swap_horiz_rounded, 'Transactions', AppRoutes.SALES),
+      (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, 'POS', AppRoutes.POS),
+      (Icons.bar_chart_rounded, Icons.bar_chart_outlined, 'Reports', AppRoutes.REPORTS),
+      (Icons.settings_rounded, Icons.settings_outlined, 'Settings', AppRoutes.SETTINGS),
     ];
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-        child: GlassPanel(
-          height: 64,
-          borderRadius: BorderRadius.circular(22),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               for (final item in destinations)
                 _MobileNavItem(
-                  icon: item.$1,
-                  label: item.$2,
-                  selected: currentRoute == item.$3,
+                  activeIcon: item.$1,
+                  inactiveIcon: item.$2,
+                  label: item.$3,
+                  selected: currentRoute == item.$4 ||
+                      (item.$4 == AppRoutes.SALES && currentRoute == AppRoutes.PAYMENTS),
                   onTap: () {
-                    if (currentRoute == item.$3) return;
-                    Get.offNamed(item.$3);
+                    if (currentRoute == item.$4) return;
+                    Get.offNamed(item.$4);
                   },
                 ),
             ],
@@ -696,13 +703,15 @@ class _MobileNavigation extends StatelessWidget {
 }
 
 class _MobileNavItem extends StatelessWidget {
-  final IconData icon;
+  final IconData activeIcon;
+  final IconData inactiveIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   const _MobileNavItem({
-    required this.icon,
+    required this.activeIcon,
+    required this.inactiveIcon,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -710,158 +719,44 @@ class _MobileNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primaryAccent = Color(0xFF4F46E5);
+    const unselectedColor = Color(0xFF94A3B8);
+
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          decoration: BoxDecoration(
-            color: selected
-                ? AppTheme.primaryColor.withOpacity(0.14)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: selected ? AppTheme.primaryColor : null,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: selected ? AppTheme.primaryColor : null,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumFloatingButton extends StatelessWidget {
-  const _PremiumFloatingButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF38BDF8), Color(0xFF2563EB), Color(0xFF7C3AED)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.42),
-            blurRadius: 30,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        onPressed: () {},
-        child: const Icon(Icons.add_rounded, size: 34),
-      ),
-    );
-  }
-}
-
-class _DashboardBackground extends StatelessWidget {
-  const _DashboardBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [
-                  Color(0xFF0B1120),
-                  Color(0xFF0F172A),
-                  Color(0xFF111827),
-                ]
-              : const [
-                  Color(0xFFF8FBFF),
-                  Color(0xFFF3F7FF),
-                  Color(0xFFEFF6FF),
-                ],
-        ),
-      ),
-      child: ExcludeSemantics(
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Positioned(
-              top: -120,
-              right: -80,
-              child: _SoftGlow(
-                color: isDark
-                    ? AppTheme.primaryColor.withValues(alpha: 0.22)
-                    : const Color(0xFF93C5FD).withValues(alpha: 0.36),
-                size: 360,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              decoration: BoxDecoration(
+                color: selected
+                    ? primaryAccent.withValues(alpha: 0.12)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                selected ? activeIcon : inactiveIcon,
+                size: 22,
+                color: selected ? primaryAccent : unselectedColor,
               ),
             ),
-            Positioned(
-              bottom: -180,
-              left: 180,
-              child: _SoftGlow(
-                color: isDark
-                    ? AppTheme.accentColor.withValues(alpha: 0.16)
-                    : const Color(0xFFC4B5FD).withValues(alpha: 0.32),
-                size: 420,
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected ? primaryAccent : unselectedColor,
+                letterSpacing: -0.1,
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SoftGlow extends StatelessWidget {
-  final Color color;
-  final double size;
-
-  const _SoftGlow({
-    required this.color,
-    required this.size,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color, color.withOpacity(0)],
         ),
       ),
     );

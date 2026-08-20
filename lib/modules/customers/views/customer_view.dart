@@ -23,39 +23,33 @@ class CustomerView extends GetView<CustomerController> {
           final width = constraints.maxWidth;
           final isDesktop = width >= 1280;
 
-          return Obx(() {
-            if (controller.isLoading.value && controller.customers.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _CustomerKpiGrid(width: width),
-                  const SizedBox(height: 18),
-                  if (isDesktop)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: _MainCustomerContent()),
-                        const SizedBox(width: 18),
-                        const Expanded(flex: 3, child: _CustomerDetailSidebar()),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        _MainCustomerContent(),
-                        const SizedBox(height: 18),
-                        const _CustomerDetailSidebar(),
-                      ],
-                    ),
-                ],
-              ),
-            );
-          });
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _CustomerKpiGrid(width: width),
+                const SizedBox(height: 18),
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 7, child: _MainCustomerContent()),
+                      const SizedBox(width: 18),
+                      const Expanded(flex: 3, child: _CustomerDetailSidebar()),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      _MainCustomerContent(),
+                      const SizedBox(height: 18),
+                      const _CustomerDetailSidebar(),
+                    ],
+                  ),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -77,14 +71,15 @@ class _CustomerKpiGrid extends GetView<CustomerController> {
                 ? 2
                 : 1;
 
-    final kpis = [
-      _CustomerKpiData(
-        title: 'Total Customers',
-        value: controller.totalCustomers.toDouble(),
-        growth: 12.5,
-        icon: Icons.people_alt_outlined,
-        gradient: [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
-      ),
+    return Obx(() {
+      final kpis = [
+        _CustomerKpiData(
+          title: 'Total Customers',
+          value: controller.totalCustomers.toDouble(),
+          growth: 12.5,
+          icon: Icons.people_alt_outlined,
+          gradient: [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
+        ),
       _CustomerKpiData(
         title: 'Active Customers',
         value: controller.activeCustomers.toDouble(),
@@ -118,23 +113,24 @@ class _CustomerKpiGrid extends GetView<CustomerController> {
       ),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: kpis.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        mainAxisExtent: 110,
-      ),
-      itemBuilder: (context, index) {
-        return _KpiCard(data: kpis[index])
-            .animate()
-            .fadeIn(delay: (70 * index).ms, duration: 420.ms)
-            .slideY(begin: 0.14, end: 0, curve: Curves.easeOutCubic);
-      },
-    );
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: kpis.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          mainAxisExtent: 110,
+        ),
+        itemBuilder: (context, index) {
+          return _KpiCard(data: kpis[index])
+              .animate()
+              .fadeIn(delay: (70 * index).ms, duration: 420.ms)
+              .slideY(begin: 0.14, end: 0, curve: Curves.easeOutCubic);
+        },
+      );
+    });
   }
 }
 

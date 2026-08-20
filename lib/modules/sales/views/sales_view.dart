@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../database/database.dart';
 import '../../../widgets/layout/main_layout.dart';
 import '../controllers/sales_controller.dart';
 
@@ -52,6 +53,9 @@ class SalesView extends GetView<SalesController> {
 
   Widget _buildMainContent(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 768) {
+        return const _MobileTransactionsView();
+      }
       if (constraints.maxWidth < 1200) {
         return SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -637,5 +641,499 @@ class _SalesReturnChart extends GetView<SalesController> {
   Widget _buildReturnStatRow(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color)), Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))]);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// MOBILE TRANSACTIONS VIEW (Matching Screen 5)
+// ─────────────────────────────────────────────────────────
+class _MobileTransactionsView extends StatefulWidget {
+  const _MobileTransactionsView();
+
+  @override
+  State<_MobileTransactionsView> createState() => _MobileTransactionsViewState();
+}
+
+class _MobileTransactionItem {
+  final String id;
+  final String date;
+  final String partyName;
+  final double amount;
+  final String type; // 'Sale', 'Purchase', 'Expense', 'Cash In', 'Cash Out'
+  final String paymentMethod;
+  final String status;
+  final dynamic rawData;
+
+  const _MobileTransactionItem({
+    required this.id,
+    required this.date,
+    required this.partyName,
+    required this.amount,
+    required this.type,
+    required this.paymentMethod,
+    required this.status,
+    this.rawData,
+  });
+}
+
+class _MobileTransactionsViewState extends State<_MobileTransactionsView> {
+  String _selectedFilter = 'All';
+  final TextEditingController _searchCtrl = TextEditingController();
+  final List<String> _filters = ['All', 'Sales', 'Purchase', 'Expenses', 'Cash In', 'Cash Out'];
+  
+  List<_MobileTransactionItem> _allTransactions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTransactions() async {
+    setState(() => _isLoading = true);
+    try {
+      final db = Get.find<AppDatabase>();
+      final invoices = await db.select(db.invoices).get();
+      final purchases = await db.select(db.purchases).get();
+      final expenses = await db.select(db.expenses).get();
+      final customers = await db.select(db.customers).get();
+      final suppliers = await db.select(db.suppliers).get();
+
+      final custMap = {for (var c in customers) c.id: c.name};
+      final suppMap = {for (var s in suppliers) s.id: s.name};
+
+      final List<_MobileTransactionItem> items = [];
+
+      for (var inv in invoices) {
+        items.add(_MobileTransactionItem(
+          id: inv.invoiceNumber,
+          date: DateFormat('dd MMM, hh:mm a').format(inv.createdAt),
+          partyName: custMap[inv.customerId] ?? 'Walk-in Customer',
+          amount: inv.grandTotal,
+          type: 'Sale',
+          paymentMethod: inv.paymentMethod,
+          status: inv.status,
+          rawData: inv,
+        ));
+      }
+
+      for (var pur in purchases) {
+        items.add(_MobileTransactionItem(
+          id: 'BILL-${pur.purchaseNumber}',
+          date: DateFormat('dd MMM, hh:mm a').format(pur.purchaseDate),
+          partyName: suppMap[pur.supplierId] ?? 'Supplier Vendor',
+          amount: pur.grandTotal,
+          type: 'Purchase',
+          paymentMethod: 'Bank / Cash',
+          status: pur.status,
+          rawData: pur,
+        ));
+      }
+
+      for (var exp in expenses) {
+        final shortId = exp.id.length > 5 ? exp.id.substring(0, 5) : exp.id;
+        items.add(_MobileTransactionItem(
+          id: 'EXP-$shortId',
+          date: DateFormat('dd MMM, hh:mm a').format(exp.expenseDate),
+          partyName: exp.description.isNotEmpty ? exp.description : exp.category,
+          amount: exp.amount,
+          type: 'Expense',
+          paymentMethod: 'Cash',
+          status: 'PAID',
+          rawData: exp,
+        ));
+      }
+
+      items.sort((a, b) => b.id.compareTo(a.id));
+      if (mounted) {
+        setState(() {
+          _allTransactions = items;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  List<_MobileTransactionItem> get _filteredTransactions {
+    return _allTransactions.where((t) {
+      if (_selectedFilter == 'Sales' && t.type != 'Sale') return false;
+      if (_selectedFilter == 'Purchase' && t.type != 'Purchase') return false;
+      if (_selectedFilter == 'Expenses' && t.type != 'Expense') return false;
+      if (_selectedFilter == 'Cash In' && t.type != 'Cash In' && t.type != 'Sale') return false;
+      if (_selectedFilter == 'Cash Out' && t.type != 'Cash Out' && t.type != 'Purchase' && t.type != 'Expense') return false;
+
+      final query = _searchCtrl.text.toLowerCase().trim();
+      if (query.isNotEmpty) {
+        return t.id.toLowerCase().contains(query) ||
+            t.partyName.toLowerCase().contains(query) ||
+            t.amount.toString().contains(query);
+      }
+      return true;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return RefreshIndicator(
+      onRefresh: _loadTransactions,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Filter Chips Bar (Horizontal scroll)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _filters.map((filter) {
+                  final isSelected = _selectedFilter == filter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedFilter = filter),
+                      borderRadius: BorderRadius.circular(20),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF4F46E5) : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF4F46E5) : (isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0)),
+                          ),
+                        ),
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Search Bar & Filter Button
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Search transactions...',
+                        hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF94A3B8)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.tune_rounded, size: 20, color: Color(0xFF4F46E5)),
+                    onPressed: () {},
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Transactions List
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_filteredTransactions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.receipt_long_outlined, size: 48, color: isDark ? Colors.white24 : Colors.grey[300]),
+                      const SizedBox(height: 12),
+                      Text('No transactions found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey[500], fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _filteredTransactions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final item = _filteredTransactions[index];
+                  return _buildTransactionCard(item, isDark);
+                },
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(_MobileTransactionItem item, bool isDark) {
+    Color badgeColor;
+    Color badgeBg;
+    if (item.type == 'Sale' || item.type == 'Cash In') {
+      badgeColor = const Color(0xFF10B981);
+      badgeBg = const Color(0xFF10B981).withValues(alpha: 0.12);
+    } else if (item.type == 'Purchase') {
+      badgeColor = const Color(0xFFF59E0B);
+      badgeBg = const Color(0xFFF59E0B).withValues(alpha: 0.12);
+    } else {
+      badgeColor = const Color(0xFFEF4444);
+      badgeBg = const Color(0xFFEF4444).withValues(alpha: 0.12);
+    }
+
+    return InkWell(
+      onTap: () => _showDetailSheet(item),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.id,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.date,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.partyName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹ ${NumberFormat('#,##,###.00').format(item.amount)}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, color: badgeColor, size: 5),
+                      const SizedBox(width: 4),
+                      Text(
+                        item.type,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDetailSheet(_MobileTransactionItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    item.id,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      item.type,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4F46E5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              _buildDetailRow('Date & Time', item.date, isDark),
+              _buildDetailRow('Party / Contact', item.partyName, isDark),
+              _buildDetailRow('Payment Mode', item.paymentMethod, isDark),
+              _buildDetailRow('Status', item.status, isDark),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total Amount', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white70 : const Color(0xFF475569))),
+                  Text(
+                    '₹ ${NumberFormat('#,##,###.00').format(item.amount)}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF4F46E5)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Close', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : const Color(0xFF64748B))),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+        ],
+      ),
+    );
   }
 }

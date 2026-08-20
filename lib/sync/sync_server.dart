@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as d;
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import '../database/database.dart';
+import '../modules/pos/controllers/pos_controller.dart';
+import '../modules/customers/controllers/customer_controller.dart';
+import '../modules/sales/controllers/sales_controller.dart';
+import '../modules/dashboard/controllers/dashboard_controller.dart';
 
 class SyncServerService extends GetxService {
   final Logger _logger = Logger();
@@ -216,6 +221,25 @@ class SyncServerService extends GetxService {
         } catch (_) {}
       }
     }
+
+    // Refresh active controllers on PC so desktop UI updates in real-time
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.isRegistered<PosController>()) {
+          Get.find<PosController>().refreshData();
+        }
+        if (Get.isRegistered<CustomerController>()) {
+          Get.find<CustomerController>().refreshData();
+        }
+        if (Get.isRegistered<SalesController>()) {
+          Get.find<SalesController>().refreshAllData();
+        }
+        if (Get.isRegistered<DashboardController>()) {
+          Get.find<DashboardController>().refreshDashboard();
+        }
+      });
+    } catch (_) {}
+
     req.response.write(jsonEncode({'status': 'ok', 'received': DateTime.now().toIso8601String()}));
   }
 

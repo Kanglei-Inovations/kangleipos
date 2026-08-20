@@ -6,9 +6,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/common/glass_panel.dart';
 import '../../../widgets/layout/main_layout.dart';
+import '../../sync/controllers/sync_controller.dart';
 import '../controllers/dashboard_controller.dart';
 
 class DashboardView extends GetView<DashboardController> {
@@ -2186,6 +2188,8 @@ class _MobileLiteDashboard extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final now = DateTime.now();
+    final formattedDate = DateFormat('MMM dd, yyyy').format(now);
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -2193,98 +2197,98 @@ class _MobileLiteDashboard extends GetView<DashboardController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Quick POS Hero Button
-          InkWell(
-            onTap: () => Get.toNamed('/pos'),
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          // Top Row: Realtime Sync Status (Left) + Date Selector (Right)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const _MobileTopSyncChip(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
                     ),
-                    child: const Icon(Icons.point_of_sale_rounded, color: Colors.white, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('OPEN POS TERMINAL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-                        SizedBox(height: 2),
-                        Text('Start billing & view recent sales', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
-                ],
+                    const SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // 4 Lite KPI Cards (Today Sale, Expense, Purchase, Due)
+          // 2x2 Grid of Modern ERP KPI Cards
           Obx(() => GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
+            childAspectRatio: 1.15,
             children: [
-              _MobileKpiTile(
-                title: 'Today Sale',
-                value: '₹${controller.todaySales.value.toStringAsFixed(0)}',
+              _MobileMetricCard(
+                title: 'Total Sales',
+                value: '₹ ${NumberFormat('#,##,###.00').format(controller.todaySales.value)}',
+                growth: '12.5%',
+                icon: Icons.point_of_sale_outlined,
+                iconColor: const Color(0xFF4F46E5),
+                sparklineColor: const Color(0xFF4F46E5),
+                sparklinePoints: const [20, 35, 28, 45, 40, 60, 55],
+              ),
+              _MobileMetricCard(
+                title: 'Total Profit',
+                value: '₹ ${NumberFormat('#,##,###.00').format(controller.todayProfit.value)}',
+                growth: '8.3%',
                 icon: Icons.trending_up_rounded,
-                color: const Color(0xFF10B981),
+                iconColor: const Color(0xFF10B981),
+                sparklineColor: const Color(0xFF10B981),
+                sparklinePoints: const [15, 25, 30, 28, 42, 48, 52],
               ),
-              _MobileKpiTile(
-                title: 'Expense',
-                value: '₹${controller.todayExpenses.value.toStringAsFixed(0)}',
-                icon: Icons.receipt_long_rounded,
-                color: const Color(0xFFEF4444),
+              _MobileMetricCard(
+                title: 'Total Orders',
+                value: '${controller.todayOrders.value}',
+                growth: '11.2%',
+                icon: Icons.shopping_bag_outlined,
+                iconColor: const Color(0xFF6366F1),
+                sparklineColor: const Color(0xFF6366F1),
+                sparklinePoints: const [10, 18, 22, 35, 30, 44, 40],
               ),
-              _MobileKpiTile(
-                title: 'Purchase',
-                value: '₹${controller.todayPurchases.value.toStringAsFixed(0)}',
-                icon: Icons.shopping_bag_rounded,
-                color: const Color(0xFF3B82F6),
-              ),
-              _MobileKpiTile(
-                title: 'Due',
-                value: '₹${controller.totalDue.value.toStringAsFixed(0)}',
-                icon: Icons.account_balance_wallet_rounded,
-                color: const Color(0xFFF59E0B),
+              _MobileMetricCard(
+                title: 'Customers',
+                value: '${controller.totalCustomers.value}',
+                growth: '3.6%',
+                icon: Icons.people_outline_rounded,
+                iconColor: const Color(0xFFF43F5E),
+                sparklineColor: const Color(0xFFF43F5E),
+                sparklinePoints: const [12, 16, 20, 24, 28, 30, 34],
               ),
             ],
           )),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Top Selling Products
-          const _TopProductsTable(),
-          const SizedBox(height: 20),
-
-          // Recent Transactions
-          const _RecentTransactionsCard(),
+          // Recent Transactions Card
+          _MobileRecentTransactionsSection(),
           const SizedBox(height: 16),
         ],
       ),
@@ -2292,17 +2296,23 @@ class _MobileLiteDashboard extends GetView<DashboardController> {
   }
 }
 
-class _MobileKpiTile extends StatelessWidget {
+class _MobileMetricCard extends StatelessWidget {
   final String title;
   final String value;
+  final String growth;
   final IconData icon;
-  final Color color;
+  final Color iconColor;
+  final Color sparklineColor;
+  final List<double> sparklinePoints;
 
-  const _MobileKpiTile({
+  const _MobileMetricCard({
     required this.title,
     required this.value,
+    required this.growth,
     required this.icon,
-    required this.color,
+    required this.iconColor,
+    required this.sparklineColor,
+    required this.sparklinePoints,
   });
 
   @override
@@ -2314,13 +2324,13 @@ class _MobileKpiTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2328,42 +2338,389 @@ class _MobileKpiTile extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
-              ),
               Container(
-                padding: const EdgeInsets.all(6),
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 16),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
               ),
             ],
           ),
+          const Spacer(),
           FittedBox(
             fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 19,
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : const Color(0xFF0F172A),
+                letterSpacing: -0.4,
               ),
             ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_upward_rounded, size: 12, color: Color(0xFF10B981)),
+                  const SizedBox(width: 2),
+                  Text(
+                    growth,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    'vs yesterday',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                width: 44,
+                height: 18,
+                child: CustomPaint(
+                  painter: _MiniSparklinePainter(points: sparklinePoints, color: sparklineColor),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
+
+class _MiniSparklinePainter extends CustomPainter {
+  final List<double> points;
+  final Color color;
+
+  _MiniSparklinePainter({required this.points, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    final stepX = size.width / (points.length - 1);
+    final maxVal = points.reduce((a, b) => a > b ? a : b);
+    final minVal = points.reduce((a, b) => a < b ? a : b);
+    final range = (maxVal - minVal) == 0 ? 1 : (maxVal - minVal);
+
+    for (var i = 0; i < points.length; i++) {
+      final x = i * stepX;
+      final y = size.height - ((points[i] - minVal) / range * size.height);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _MobileRecentTransactionsSection extends GetView<DashboardController> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Transactions',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              InkWell(
+                onTap: () => Get.toNamed(AppRoutes.SALES),
+                child: const Row(
+                  children: [
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4F46E5),
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF4F46E5)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Obx(() {
+            final txs = controller.unifiedTransactions;
+            if (txs.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text('No transactions recorded yet', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                ),
+              );
+            }
+
+            return Column(
+              children: txs.take(6).map((tx) {
+                return _MobileTxRowItem(tx: tx);
+              }).toList(),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileTxRowItem extends StatelessWidget {
+  final DashboardTransaction tx;
+
+  const _MobileTxRowItem({required this.tx});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    Color badgeColor;
+    String badgeText;
+    if (tx.type == 'SELL') {
+      badgeColor = const Color(0xFF10B981);
+      badgeText = 'Sale';
+    } else if (tx.type == 'PURCHASE') {
+      badgeColor = const Color(0xFFF59E0B);
+      badgeText = 'Purchase';
+    } else {
+      badgeColor = const Color(0xFFEF4444);
+      badgeText = 'Expense';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.5) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    tx.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹ ${NumberFormat('#,##,###.00').format(tx.amount)}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: badgeColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileTopSyncChip extends StatelessWidget {
+  const _MobileTopSyncChip();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<SyncController>()) Get.put(SyncController());
+    final syncCtrl = Get.find<SyncController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Obx(() {
+      final isConnected = syncCtrl.isConnected.value;
+      final isSyncing = syncCtrl.isSyncing.value;
+      final Color statusColor = isConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+
+      String label;
+      if (isSyncing) {
+        label = 'Syncing...';
+      } else if (isConnected) {
+        label = 'Connected';
+      } else {
+        label = 'Offline';
+      }
+
+      return InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: isSyncing ? null : () => syncCtrl.syncNow(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSyncing)
+                SizedBox(
+                  width: 13,
+                  height: 13,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: statusColor,
+                  ),
+                )
+              else
+                Icon(
+                  isConnected ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                  size: 15,
+                  color: statusColor,
+                ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 800.ms),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+

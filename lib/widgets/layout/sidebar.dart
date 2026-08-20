@@ -6,6 +6,8 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../database/database.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
+import '../../sync/sync_server.dart';
+import '../../sync/sync_client.dart';
 import '../common/shift_close_dialog.dart';
 
 class Sidebar extends StatelessWidget {
@@ -431,61 +433,101 @@ class _SystemStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+    final server = Get.isRegistered<SyncServerService>() ? Get.find<SyncServerService>() : null;
+    final client = Get.isRegistered<SyncClientService>() ? Get.find<SyncClientService>() : null;
+
+    return Obx(() {
+      final isServerOn = server?.isRunning.value ?? false;
+      final isClientConnected = client?.isConnected.value ?? false;
+      final isClientSyncing = client?.isSyncing.value ?? false;
+
+      final isOnline = isServerOn || isClientConnected;
+      final Color statusColor = isOnline ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+
+      String title;
+      String subtitle;
+
+      if (server != null && isServerOn) {
+        title = 'SYNC SERVER ONLINE';
+        final ip = server.serverIp.value;
+        subtitle = ip.isNotEmpty ? '$ip:8765' : 'Port 8765 Active';
+      } else if (client != null && isClientConnected) {
+        title = isClientSyncing ? 'SYNCING DATA...' : 'SYNC CONNECTED';
+        subtitle = client.serverIp.value.isNotEmpty ? client.serverIp.value : 'Connected to PC';
+      } else {
+        title = 'SYNC OFFLINE';
+        subtitle = 'Not Connected';
+      }
+
+      return InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.greenAccent.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.wifi_rounded,
-                color: Colors.greenAccent, size: 16),
+        onTap: () {
+          Get.toNamed(AppRoutes.SETTINGS);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'SYSTEM ONLINE',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Connected',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Icon(
+                  isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                  color: statusColor,
+                  size: 16,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 800.ms),
+            ],
           ),
-          Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: Colors.greenAccent,
-              shape: BoxShape.circle,
-            ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 800.ms),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 }
 
